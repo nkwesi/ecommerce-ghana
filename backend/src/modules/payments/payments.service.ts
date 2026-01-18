@@ -173,7 +173,7 @@ export class PaymentsService {
             }
 
             payment.status = PaymentStatus.FAILED;
-            payment.failureReason = event.data.failureReason;
+            payment.failureReason = event.data.failureReason ?? 'Unknown error';
             await manager.save(Payment, payment);
 
             // 2. Update order status
@@ -216,7 +216,7 @@ export class PaymentsService {
         }
 
         payment.status = PaymentStatus.REFUNDED;
-        payment.refundAmount = event.data.refundAmount;
+        payment.refundAmount = event.data.refundAmount ?? 0;
         payment.refundedAt = new Date();
         await this.paymentRepository.save(payment);
 
@@ -228,7 +228,7 @@ export class PaymentsService {
     /**
      * Get payment by order ID.
      */
-    async findByOrderId(orderId: string): Promise<Payment> {
+    async findByOrderId(orderId: string): Promise<Payment | null> {
         return this.paymentRepository.findOne({
             where: { orderId },
         });

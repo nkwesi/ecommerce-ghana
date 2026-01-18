@@ -6,7 +6,7 @@ import { Order, OrderStatus } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { ShippingAddress } from './entities/shipping-address.entity';
 import { ReservationService } from '../inventory/reservation.service';
-import { ReservationStatus } from '../inventory/entities/inventory-reservation.entity';
+import { InventoryReservation, ReservationStatus } from '../inventory/entities/inventory-reservation.entity';
 import { ProductsService } from '../products/products.service';
 import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
 import { v4 as uuidv4 } from 'uuid';
@@ -76,15 +76,13 @@ export class CheckoutService {
     ): Promise<CheckoutResult> {
         return this.dataSource.transaction(async (manager) => {
             // Step 1: Get active reservations for this session
-            const reservations = await manager.find(
-                require('../inventory/entities/inventory-reservation.entity').InventoryReservation,
-                {
-                    where: {
-                        sessionId,
-                        status: ReservationStatus.ACTIVE,
-                    },
-                    relations: ['store'],
+            const reservations = await manager.find(InventoryReservation, {
+                where: {
+                    sessionId,
+                    status: ReservationStatus.ACTIVE,
                 },
+                relations: ['store'],
+            },
             );
 
             if (reservations.length === 0) {
@@ -173,8 +171,7 @@ export class CheckoutService {
 
             // Step 8: Link reservations to order
             for (const reservation of reservations) {
-                await manager.update(
-                    require('../inventory/entities/inventory-reservation.entity').InventoryReservation,
+                await manager.update(InventoryReservation,
                     { id: reservation.id },
                     { orderId: savedOrder.id },
                 );
