@@ -195,11 +195,11 @@ export class ReservationService {
             },
         );
 
-        if (result.affected > 0) {
+        if ((result.affected ?? 0) > 0) {
             this.logger.log(`Expired ${result.affected} reservations`);
         }
 
-        return result.affected;
+        return result.affected ?? 0;
     }
 
     /**

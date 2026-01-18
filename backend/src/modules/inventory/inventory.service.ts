@@ -124,7 +124,11 @@ export class InventoryService {
             .select('DISTINCT si.sku', 'sku')
             .getRawMany();
 
-        const lowStock = [];
+        const lowStock: {
+            sku: string;
+            totalSellable: number;
+            stores: { storeName: string; sellable: number }[];
+        }[] = [];
 
         for (const { sku } of skus) {
             const stockInfo = await this.getSellableStock(sku);
