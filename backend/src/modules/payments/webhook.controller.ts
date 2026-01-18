@@ -5,11 +5,12 @@ import {
     Headers,
     HttpException,
     HttpStatus,
-    RawBodyRequest,
     Req,
 } from '@nestjs/common';
+import type { RawBodyRequest } from '@nestjs/common';
 import { Request } from 'express';
-import { PaymentsService, PolarWebhookEvent } from './payments.service';
+import { PaymentsService } from './payments.service';
+import type { PolarWebhookEvent } from './payments.service';
 
 @Controller('api/v1/webhooks')
 export class WebhookController {

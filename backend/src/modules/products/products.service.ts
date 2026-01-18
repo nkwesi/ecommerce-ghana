@@ -129,7 +129,7 @@ export class ProductsService {
         return this.productRepository.save(product);
     }
 
-    async updateProduct(id: string, data: Partial<Product>): Promise<Product> {
+    async updateProduct(id: string, data: Partial<Product>): Promise<Product | null> {
         await this.productRepository.update(id, data);
         return this.productRepository.findOne({ where: { id } });
     }
@@ -139,7 +139,7 @@ export class ProductsService {
         return this.variantRepository.save(variant);
     }
 
-    async updateVariant(id: string, data: Partial<ProductVariant>): Promise<ProductVariant> {
+    async updateVariant(id: string, data: Partial<ProductVariant>): Promise<ProductVariant | null> {
         await this.variantRepository.update(id, data);
         return this.variantRepository.findOne({ where: { id } });
     }
