@@ -10,6 +10,8 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { UsersModule } from './modules/users/users.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 // Entities
 import { Product, Category } from './modules/products/entities/product.entity';
@@ -21,6 +23,7 @@ import { Order } from './modules/orders/entities/order.entity';
 import { OrderItem } from './modules/orders/entities/order-item.entity';
 import { ShippingAddress } from './modules/orders/entities/shipping-address.entity';
 import { Payment, WebhookEvent } from './modules/payments/entities/payment.entity';
+import { User } from './modules/users/entities/user.entity';
 
 @Module({
   imports: [
@@ -52,6 +55,7 @@ import { Payment, WebhookEvent } from './modules/payments/entities/payment.entit
           ShippingAddress,
           Payment,
           WebhookEvent,
+          User,
         ],
         synchronize: configService.get('NODE_ENV') === 'development', // Auto-create tables in dev
         logging: configService.get('NODE_ENV') === 'development',
@@ -73,6 +77,8 @@ import { Payment, WebhookEvent } from './modules/payments/entities/payment.entit
     OrdersModule,
     PaymentsModule,
     TasksModule,
+    UsersModule,
+    AuthModule,
   ],
   providers: [
     {
