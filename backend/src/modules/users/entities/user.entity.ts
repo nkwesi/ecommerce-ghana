@@ -28,9 +28,29 @@ export class User {
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
 
+    // Settings fields
+    @Column({ length: 3, default: 'GHS' })
+    currency: string;
+
+    @Column({ length: 10, default: 'en-US' })
+    language: string;
+
+    @Column({ name: 'two_factor_enabled', default: false })
+    twoFactorEnabled: boolean;
+
+    @Column({ name: 'marketing_opt_in', default: true })
+    marketingOptIn: boolean;
+
+    @Column({ name: 'order_notifications', default: true })
+    orderNotifications: boolean;
+
+    @Column({ type: 'jsonb', nullable: true })
+    preferences: Record<string, any>;
+
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
 }
+

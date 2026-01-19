@@ -12,6 +12,8 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { AddressesModule } from './modules/addresses/addresses.module';
+import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
 
 // Entities
 import { Product, Category } from './modules/products/entities/product.entity';
@@ -24,6 +26,8 @@ import { OrderItem } from './modules/orders/entities/order-item.entity';
 import { ShippingAddress } from './modules/orders/entities/shipping-address.entity';
 import { Payment, WebhookEvent } from './modules/payments/entities/payment.entity';
 import { User } from './modules/users/entities/user.entity';
+import { Address } from './modules/addresses/entities/address.entity';
+import { PaymentMethod } from './modules/payment-methods/entities/payment-method.entity';
 
 @Module({
   imports: [
@@ -56,8 +60,10 @@ import { User } from './modules/users/entities/user.entity';
           Payment,
           WebhookEvent,
           User,
+          Address,
+          PaymentMethod,
         ],
-        synchronize: configService.get('NODE_ENV') === 'development', // Auto-create tables in dev
+        synchronize: configService.get('NODE_ENV') === 'development',
         logging: configService.get('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
@@ -66,8 +72,8 @@ import { User } from './modules/users/entities/user.entity';
     // Rate limiting
     ThrottlerModule.forRoot([
       {
-        ttl: 60000, // 1 minute
-        limit: 100, // 100 requests per minute
+        ttl: 60000,
+        limit: 100,
       },
     ]),
 
@@ -79,6 +85,8 @@ import { User } from './modules/users/entities/user.entity';
     TasksModule,
     UsersModule,
     AuthModule,
+    AddressesModule,
+    PaymentMethodsModule,
   ],
   providers: [
     {
@@ -88,3 +96,4 @@ import { User } from './modules/users/entities/user.entity';
   ],
 })
 export class AppModule { }
+

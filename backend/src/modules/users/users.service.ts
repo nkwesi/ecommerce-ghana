@@ -14,6 +14,10 @@ export class UsersService {
         return this.userRepository.findOne({ where: { email } });
     }
 
+    async findById(id: string): Promise<User | null> {
+        return this.userRepository.findOne({ where: { id } });
+    }
+
     async create(userData: Partial<User>): Promise<User> {
         const user = this.userRepository.create(userData);
         return this.userRepository.save(user);
@@ -24,6 +28,11 @@ export class UsersService {
         return this.userRepository.findOne({ where: { id } });
     }
 
+    async delete(id: string): Promise<void> {
+        await this.userRepository.update(id, { isActive: false });
+        // In production, you might want to actually delete or anonymize the user
+    }
+
     async createOrUpdate(email: string, userData: Partial<User>): Promise<User> {
         const existingUser = await this.findByEmail(email);
         if (existingUser) {
@@ -32,3 +41,4 @@ export class UsersService {
         return this.create({ ...userData, email });
     }
 }
+
