@@ -48,10 +48,12 @@ export class AdminController {
 
     @Get('products')
     async getAllProducts(
+        @Query('search') search?: string,
         @Query('limit') limit?: string,
         @Query('offset') offset?: string,
     ) {
         return this.adminService.getAllProducts({
+            search,
             limit: limit ? parseInt(limit) : 50,
             offset: offset ? parseInt(offset) : 0,
         });
@@ -83,5 +85,26 @@ export class AdminController {
     @Get('categories')
     async getCategories() {
         return this.adminService.getCategories();
+    }
+
+    @Put('orders/:id/status')
+    async updateOrderStatus(
+        @Param('id') id: string,
+        @Body('status') status: string,
+    ) {
+        return this.adminService.updateOrderStatus(id, status);
+    }
+
+    @Put('users/:id/role')
+    async updateUserRole(
+        @Param('id') id: string,
+        @Body('role') role: string,
+    ) {
+        return this.adminService.updateUserRole(id, role);
+    }
+
+    @Delete('users/:id')
+    async deleteUser(@Param('id') id: string) {
+        return this.adminService.deleteUser(id);
     }
 }

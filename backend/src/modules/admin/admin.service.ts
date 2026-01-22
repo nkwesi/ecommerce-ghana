@@ -41,7 +41,7 @@ export class AdminService {
         return this.usersService.findAllUsers(limit, offset);
     }
 
-    async getAllProducts(options: { limit?: number; offset?: number }) {
+    async getAllProducts(options: { search?: string; limit?: number; offset?: number }) {
         return this.productsService.findAll(options);
     }
 
@@ -76,6 +76,23 @@ export class AdminService {
 
     async getCategories() {
         return this.productsService.findAllCategories();
+    }
+
+    async updateOrderStatus(id: string, status: any) {
+        return this.ordersService.updateStatus(id, status);
+    }
+
+    async updateUserRole(id: string, role: any) {
+        const user = await this.usersService.update(id, { role });
+        if (!user) {
+            throw new NotFoundException(`User not found: ${id}`);
+        }
+        return user;
+    }
+
+    async deleteUser(id: string) {
+        await this.usersService.delete(id);
+        return { message: 'User deactivated successfully', id };
     }
 }
 

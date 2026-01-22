@@ -21,6 +21,7 @@ export class ProductsService {
      * Get all active products with their variants.
      */
     async findAll(options?: {
+        search?: string;
         categorySlug?: string;
         featured?: boolean;
         limit?: number;
@@ -38,6 +39,10 @@ export class ProductsService {
 
         if (options?.featured) {
             query.andWhere('p.isFeatured = :featured', { featured: true });
+        }
+
+        if (options?.search) {
+            query.andWhere('(p.name ILIKE :search OR p.slug ILIKE :search)', { search: `%${options.search}%` });
         }
 
         query.orderBy('p.createdAt', 'DESC');
