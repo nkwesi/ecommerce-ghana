@@ -6,10 +6,34 @@ import {
     spring,
 } from "remotion";
 
+// Custom SVG icons that work in Remotion
+const SearchIcon = () => (
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#16439c" strokeWidth="1.5">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+    </svg>
+);
+
+const BagIcon = () => (
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#16439c" strokeWidth="1.5">
+        <path d="M6 6h12l1 14H5L6 6z" strokeLinejoin="round" />
+        <path d="M9 6V5a3 3 0 0 1 6 0v1" />
+    </svg>
+);
+
+const ShippingIcon = () => (
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#16439c" strokeWidth="1.5">
+        <rect x="1" y="6" width="15" height="10" rx="1" />
+        <path d="M16 10h4l3 4v4h-7v-8z" strokeLinejoin="round" />
+        <circle cx="6" cy="18" r="2" />
+        <circle cx="18" cy="18" r="2" />
+    </svg>
+);
+
 const features = [
-    { icon: "search", title: "Smart Search", desc: "Find products instantly" },
-    { icon: "shopping_bag", title: "Easy Checkout", desc: "Secure payments" },
-    { icon: "local_shipping", title: "Fast Delivery", desc: "Quick shipping" },
+    { icon: SearchIcon, title: "Smart Search", desc: "Find exactly what you need with intelligent product search" },
+    { icon: BagIcon, title: "Easy Checkout", desc: "Secure payments with multiple options including mobile money" },
+    { icon: ShippingIcon, title: "Fast Delivery", desc: "Quick and reliable shipping right to your doorstep" },
 ];
 
 const FeatureItem: React.FC<{
@@ -18,7 +42,7 @@ const FeatureItem: React.FC<{
     frame: number;
     fps: number;
 }> = ({ feature, index, frame, fps }) => {
-    const delay = 15 + index * 20;
+    const delay = 20 + index * 25;
     const adjustedFrame = Math.max(0, frame - delay);
 
     const scale = spring({
@@ -27,9 +51,11 @@ const FeatureItem: React.FC<{
         config: { damping: 12, stiffness: 100 },
     });
 
-    const opacity = interpolate(adjustedFrame, [0, 10], [0, 1], {
+    const opacity = interpolate(adjustedFrame, [0, 15], [0, 1], {
         extrapolateRight: "clamp",
     });
+
+    const IconComponent = feature.icon;
 
     return (
         <div
@@ -37,39 +63,34 @@ const FeatureItem: React.FC<{
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                padding: 40,
-                gap: 24,
+                padding: "48px 40px",
+                gap: 28,
                 transform: `scale(${scale})`,
                 opacity,
+                width: 340,
+                backgroundColor: "#fafafa",
+                border: "1px solid #f0f0f0",
             }}
         >
-            {/* Icon - minimal square button style like the app */}
+            {/* Icon container */}
             <div
                 style={{
-                    width: 80,
-                    height: 80,
-                    border: "1px solid #f0f2f4",
+                    width: 100,
+                    height: 100,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     backgroundColor: "#ffffff",
+                    border: "1px solid #e8e8e8",
                 }}
             >
-                <span
-                    style={{
-                        fontFamily: "'Material Symbols Outlined'",
-                        fontSize: 32,
-                        color: "#111317",
-                    }}
-                >
-                    {feature.icon}
-                </span>
+                <IconComponent />
             </div>
 
             {/* Title */}
             <h3
                 style={{
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: 500,
                     color: "#111317",
                     margin: 0,
@@ -84,11 +105,13 @@ const FeatureItem: React.FC<{
             {/* Description */}
             <p
                 style={{
-                    fontSize: 12,
-                    color: "rgba(17,19,23,0.5)",
+                    fontSize: 14,
+                    color: "rgba(17,19,23,0.6)",
                     margin: 0,
                     textAlign: "center",
                     fontFamily: "'Inter', sans-serif",
+                    lineHeight: 1.6,
+                    maxWidth: 260,
                 }}
             >
                 {feature.desc}
@@ -106,10 +129,15 @@ export const FeaturesScene: React.FC = () => {
         extrapolateRight: "clamp",
     });
 
-    const titleScale = spring({
+    const titleY = spring({
         frame,
         fps,
         config: { damping: 15, stiffness: 100 },
+    });
+
+    // Accent line animation
+    const lineWidth = interpolate(frame, [5, 30], [0, 80], {
+        extrapolateRight: "clamp",
     });
 
     return (
@@ -120,33 +148,67 @@ export const FeaturesScene: React.FC = () => {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: 60,
+                padding: 80,
             }}
         >
-            {/* Section title */}
-            <h2
+            {/* Header section */}
+            <div
                 style={{
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: "#111317",
-                    letterSpacing: "0.25em",
-                    margin: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
                     marginBottom: 80,
                     opacity: titleOpacity,
-                    transform: `scale(${titleScale})`,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    textTransform: "uppercase",
+                    transform: `translateY(${(1 - titleY) * -30}px)`,
                 }}
             >
-                WHY SHOP WITH US
-            </h2>
+                {/* Accent line */}
+                <div
+                    style={{
+                        width: lineWidth,
+                        height: 2,
+                        backgroundColor: "#16439c",
+                        marginBottom: 32,
+                    }}
+                />
+
+                {/* Section title */}
+                <h2
+                    style={{
+                        fontSize: 14,
+                        fontWeight: 500,
+                        color: "#111317",
+                        letterSpacing: "0.3em",
+                        margin: 0,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        textTransform: "uppercase",
+                    }}
+                >
+                    Why Shop With Us
+                </h2>
+
+                {/* Subtitle */}
+                <p
+                    style={{
+                        fontSize: 32,
+                        fontWeight: 300,
+                        color: "#111317",
+                        letterSpacing: "0.05em",
+                        margin: 0,
+                        marginTop: 16,
+                        fontFamily: "'Space Grotesk', sans-serif",
+                    }}
+                >
+                    Curated experience, exceptional service
+                </p>
+            </div>
 
             {/* Features row */}
             <div
                 style={{
                     display: "flex",
                     justifyContent: "center",
-                    gap: 120,
+                    gap: 40,
                 }}
             >
                 {features.map((feature, index) => (
@@ -159,17 +221,6 @@ export const FeaturesScene: React.FC = () => {
                     />
                 ))}
             </div>
-
-            {/* Bottom accent line */}
-            <div
-                style={{
-                    position: "absolute",
-                    bottom: 100,
-                    width: 60,
-                    height: 2,
-                    backgroundColor: "#16439c",
-                }}
-            />
         </AbsoluteFill>
     );
 };

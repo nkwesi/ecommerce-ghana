@@ -4,15 +4,26 @@ import {
     useVideoConfig,
     interpolate,
     spring,
+    staticFile,
+    Img,
 } from "remotion";
 
+// 12 unique products - 2 rows of 6
 const products = [
-    { id: "LX-001", name: "Minimal Jacket", price: "₵450" },
-    { id: "LX-002", name: "Structure Dress", price: "₵320" },
-    { id: "LX-003", name: "Essential Shirt", price: "₵180" },
-    { id: "LX-004", name: "Clean Tee", price: "₵95" },
-    { id: "LX-005", name: "Form Top", price: "₵220" },
-    { id: "LX-006", name: "Line Skirt", price: "₵275" },
+    // Row 1
+    { id: "LX-001", name: "Minimal Jacket", image: "jacket.png" },
+    { id: "LX-002", name: "Structure Dress", image: "dress.png" },
+    { id: "LX-003", name: "Essential Shirt", image: "shirt.png" },
+    { id: "LX-004", name: "Clean Tee", image: "tee.png" },
+    { id: "LX-005", name: "Form Top", image: "top.png" },
+    { id: "LX-006", name: "Line Skirt", image: "skirt.png" },
+    // Row 2 - all unique items
+    { id: "LX-007", name: "Camel Coat", image: "coat.png" },
+    { id: "LX-008", name: "Tailored Pants", image: "pants.png" },
+    { id: "LX-009", name: "Knit Sweater", image: "sweater.png" },
+    { id: "LX-010", name: "Wool Blazer", image: "blazer.png" },
+    { id: "LX-011", name: "Navy Cardigan", image: "cardigan.png" },
+    { id: "LX-012", name: "Classic Shorts", image: "shorts.png" },
 ];
 
 const ProductCard: React.FC<{
@@ -21,8 +32,10 @@ const ProductCard: React.FC<{
     frame: number;
     fps: number;
 }> = ({ product, index, frame, fps }) => {
-    // Staggered entrance animation
-    const delay = index * 8;
+    // Staggered entrance - row by row
+    const row = Math.floor(index / 6);
+    const col = index % 6;
+    const delay = row * 15 + col * 5;
     const adjustedFrame = Math.max(0, frame - delay);
 
     const slideY = spring({
@@ -35,10 +48,10 @@ const ProductCard: React.FC<{
         extrapolateRight: "clamp",
     });
 
-    // Grayscale to color transition (like the app's hover effect)
+    // Grayscale to color transition
     const grayscale = interpolate(
         frame,
-        [90, 120],
+        [80, 110],
         [100, 0],
         { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
     );
@@ -46,15 +59,15 @@ const ProductCard: React.FC<{
     return (
         <div
             style={{
-                width: 260,
+                width: 280,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                transform: `translateY(${(1 - slideY) * 60}px)`,
+                transform: `translateY(${(1 - slideY) * 50}px)`,
                 opacity,
             }}
         >
-            {/* Product image placeholder - grayscale like the app */}
+            {/* Product image */}
             <div
                 style={{
                     width: "100%",
@@ -63,32 +76,30 @@ const ProductCard: React.FC<{
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    padding: 32,
-                    filter: `grayscale(${grayscale}%)`,
+                    padding: 20,
+                    overflow: "hidden",
                 }}
             >
-                <div
+                <Img
+                    src={staticFile(product.image)}
                     style={{
-                        width: "70%",
-                        height: "70%",
-                        backgroundColor: "#e0e0e0",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
+                        width: "85%",
+                        height: "85%",
+                        objectFit: "contain",
+                        filter: `grayscale(${grayscale}%)`,
+                        transform: "scale(0.92)",
                     }}
-                >
-                    <span style={{ fontSize: 48, opacity: 0.3 }}>👕</span>
-                </div>
+                />
             </div>
 
-            {/* Product ID - mono font */}
+            {/* Product ID */}
             <p
                 style={{
                     fontSize: 10,
                     letterSpacing: "0.2em",
                     color: "#111317",
                     margin: 0,
-                    marginTop: 20,
+                    marginTop: 16,
                     fontFamily: "'JetBrains Mono', monospace",
                     textTransform: "uppercase",
                 }}
@@ -131,24 +142,24 @@ export const ProductShowcase: React.FC = () => {
         <AbsoluteFill
             style={{
                 backgroundColor: "#ffffff",
-                padding: 80,
+                padding: "50px 60px",
                 fontFamily: "'Inter', sans-serif",
             }}
         >
-            {/* Category filter bar - like the app */}
+            {/* Category filter bar */}
             <div
                 style={{
                     display: "flex",
                     justifyContent: "center",
                     gap: 48,
-                    marginBottom: 60,
+                    marginBottom: 40,
                     borderBottom: "1px solid #f0f2f4",
-                    paddingBottom: 24,
+                    paddingBottom: 20,
                     opacity: titleOpacity,
                     transform: `translateY(${titleY}px)`,
                 }}
             >
-                {["ALL COLLECTION", "MENS", "WOMENS", "TOPS", "FOOTWEAR"].map((cat, i) => (
+                {["ALL COLLECTION", "MENS", "WOMENS", "TOPS", "FOOTWEAR", "ACCESSORIES"].map((cat, i) => (
                     <span
                         key={cat}
                         style={{
@@ -166,13 +177,13 @@ export const ProductShowcase: React.FC = () => {
                 ))}
             </div>
 
-            {/* Product grid */}
+            {/* Product grid - 2 rows */}
             <div
                 style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    gap: 24,
-                    flexWrap: "wrap",
+                    display: "grid",
+                    gridTemplateColumns: "repeat(6, 1fr)",
+                    gap: "30px 20px",
+                    justifyItems: "center",
                 }}
             >
                 {products.map((product, index) => (
