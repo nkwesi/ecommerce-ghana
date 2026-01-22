@@ -95,13 +95,14 @@ const ProductCard: React.FC<{
             {/* Product ID */}
             <p
                 style={{
-                    fontSize: 10,
-                    letterSpacing: "0.2em",
+                    fontSize: 20,
+                    letterSpacing: "0.15em",
                     color: "#111317",
                     margin: 0,
-                    marginTop: 16,
+                    marginTop: 18,
                     fontFamily: "'JetBrains Mono', monospace",
                     textTransform: "uppercase",
+                    fontWeight: 500,
                 }}
             >
                 {product.id}
@@ -110,11 +111,11 @@ const ProductCard: React.FC<{
             {/* Product name */}
             <p
                 style={{
-                    fontSize: 9,
+                    fontSize: 18,
                     letterSpacing: "0.1em",
                     color: "#111317",
                     margin: 0,
-                    marginTop: 4,
+                    marginTop: 8,
                     fontFamily: "'JetBrains Mono', monospace",
                     textTransform: "uppercase",
                 }}
@@ -163,13 +164,13 @@ export const ProductShowcase: React.FC = () => {
                     <span
                         key={cat}
                         style={{
-                            fontSize: 10,
-                            letterSpacing: "0.2em",
-                            color: i === 0 ? "#16439c" : "rgba(17,19,23,0.4)",
+                            fontSize: 20,
+                            letterSpacing: "0.15em",
+                            color: i === 0 ? "#16439c" : "rgba(17,19,23,0.5)",
                             fontFamily: "'JetBrains Mono', monospace",
                             fontWeight: 500,
-                            borderBottom: i === 0 ? "1px solid #16439c" : "none",
-                            paddingBottom: 4,
+                            borderBottom: i === 0 ? "3px solid #16439c" : "none",
+                            paddingBottom: 8,
                         }}
                     >
                         {cat}

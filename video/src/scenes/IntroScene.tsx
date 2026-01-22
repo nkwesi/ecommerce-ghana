@@ -80,12 +80,12 @@ export const IntroScene: React.FC = () => {
             {/* Tagline with typewriter - mono font */}
             <div
                 style={{
-                    marginTop: 40,
-                    fontSize: 14,
-                    letterSpacing: "0.25em",
-                    color: "rgba(17,19,23,0.5)",
+                    marginTop: 56,
+                    fontSize: 32,
+                    letterSpacing: "0.15em",
+                    color: "rgba(17,19,23,0.65)",
                     fontWeight: 400,
-                    height: 30,
+                    height: 50,
                     fontFamily: "'JetBrains Mono', monospace",
                     textTransform: "uppercase",
                 }}

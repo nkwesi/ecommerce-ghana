@@ -90,11 +90,11 @@ const FeatureItem: React.FC<{
             {/* Title */}
             <h3
                 style={{
-                    fontSize: 16,
+                    fontSize: 28,
                     fontWeight: 500,
                     color: "#111317",
                     margin: 0,
-                    letterSpacing: "0.15em",
+                    letterSpacing: "0.12em",
                     fontFamily: "'JetBrains Mono', monospace",
                     textTransform: "uppercase",
                 }}
@@ -105,13 +105,13 @@ const FeatureItem: React.FC<{
             {/* Description */}
             <p
                 style={{
-                    fontSize: 14,
-                    color: "rgba(17,19,23,0.6)",
+                    fontSize: 22,
+                    color: "rgba(17,19,23,0.65)",
                     margin: 0,
                     textAlign: "center",
                     fontFamily: "'Inter', sans-serif",
-                    lineHeight: 1.6,
-                    maxWidth: 260,
+                    lineHeight: 1.5,
+                    maxWidth: 300,
                 }}
             >
                 {feature.desc}
@@ -175,10 +175,10 @@ export const FeaturesScene: React.FC = () => {
                 {/* Section title */}
                 <h2
                     style={{
-                        fontSize: 14,
+                        fontSize: 26,
                         fontWeight: 500,
                         color: "#111317",
-                        letterSpacing: "0.3em",
+                        letterSpacing: "0.25em",
                         margin: 0,
                         fontFamily: "'JetBrains Mono', monospace",
                         textTransform: "uppercase",
@@ -190,12 +190,12 @@ export const FeaturesScene: React.FC = () => {
                 {/* Subtitle */}
                 <p
                     style={{
-                        fontSize: 32,
+                        fontSize: 52,
                         fontWeight: 300,
                         color: "#111317",
-                        letterSpacing: "0.05em",
+                        letterSpacing: "0.04em",
                         margin: 0,
-                        marginTop: 16,
+                        marginTop: 24,
                         fontFamily: "'Space Grotesk', sans-serif",
                     }}
                 >

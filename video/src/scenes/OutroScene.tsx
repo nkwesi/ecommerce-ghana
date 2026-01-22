@@ -60,11 +60,11 @@ export const OutroScene: React.FC = () => {
             {/* Main CTA */}
             <h1
                 style={{
-                    fontSize: 48,
+                    fontSize: 80,
                     fontWeight: 300,
                     color: "#111317",
                     margin: 0,
-                    letterSpacing: "0.2em",
+                    letterSpacing: "0.12em",
                     transform: `scale(${ctaScale})`,
                     opacity: ctaOpacity,
                     textAlign: "center",
@@ -78,19 +78,19 @@ export const OutroScene: React.FC = () => {
             {/* URL */}
             <div
                 style={{
-                    marginTop: 40,
-                    padding: "12px 32px",
-                    border: "1px solid #16439c",
+                    marginTop: 56,
+                    padding: "20px 48px",
+                    border: "2px solid #16439c",
                     opacity: urlOpacity,
                 }}
             >
                 <p
                     style={{
-                        fontSize: 12,
+                        fontSize: 28,
                         fontWeight: 500,
                         color: "#16439c",
                         margin: 0,
-                        letterSpacing: "0.2em",
+                        letterSpacing: "0.15em",
                         fontFamily: "'JetBrains Mono', monospace",
                         textTransform: "uppercase",
                     }}
@@ -102,9 +102,9 @@ export const OutroScene: React.FC = () => {
             {/* Tagline */}
             <p
                 style={{
-                    marginTop: 30,
-                    fontSize: 10,
-                    color: "rgba(17,19,23,0.4)",
+                    marginTop: 40,
+                    fontSize: 22,
+                    color: "rgba(17,19,23,0.55)",
                     letterSpacing: "0.25em",
                     opacity: urlOpacity,
                     fontFamily: "'JetBrains Mono', monospace",
