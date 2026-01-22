@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
@@ -12,6 +12,14 @@ export class UsersService {
 
     async findByEmail(email: string): Promise<User | null> {
         return this.userRepository.findOne({ where: { email } });
+    }
+
+    async findByEmailWithPassword(email: string): Promise<User | null> {
+        return this.userRepository
+            .createQueryBuilder('user')
+            .addSelect('user.password')
+            .where('user.email = :email', { email })
+            .getOne();
     }
 
     async findById(id: string): Promise<User | null> {
@@ -40,5 +48,31 @@ export class UsersService {
         }
         return this.create({ ...userData, email });
     }
-}
 
+    async createAdmin(email: string, hashedPassword: string, fullName: string): Promise<User> {
+        const existingUser = await this.findByEmail(email);
+        if (existingUser) {
+            // Update existing user to admin
+            return this.update(existingUser.id, {
+                password: hashedPassword,
+                fullName,
+                role: UserRole.ADMIN,
+            }) as Promise<User>;
+        }
+        return this.create({
+            email,
+            password: hashedPassword,
+            fullName,
+            role: UserRole.ADMIN,
+        });
+    }
+
+    async findAllUsers(limit = 50, offset = 0): Promise<{ users: User[]; total: number }> {
+        const [users, total] = await this.userRepository.findAndCount({
+            take: limit,
+            skip: offset,
+            order: { createdAt: 'DESC' },
+        });
+        return { users, total };
+    }
+}

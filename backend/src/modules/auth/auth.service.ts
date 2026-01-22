@@ -1,8 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { UserRole } from '../users/entities/user.entity';
 import Redis from 'ioredis';
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -14,13 +17,14 @@ export class AuthService {
     constructor(
         private readonly configService: ConfigService,
         private readonly usersService: UsersService,
+        private readonly jwtService: JwtService,
     ) {
         try {
             this.redisClient = new Redis({
                 host: this.configService.get<string>('redis.host'),
                 port: this.configService.get<number>('redis.port'),
                 retryStrategy: (times) => {
-                    if (times > 1) return null; // Only try once, then fail over
+                    if (times > 1) return null;
                     return 0;
                 }
             });
@@ -32,6 +36,10 @@ export class AuthService {
             this.logger.warn(`Failed to initialize Redis: ${err}. Using memory store.`);
         }
     }
+
+    // ============================================
+    // OTP-based Login (for Customers)
+    // ============================================
 
     async requestOtp(email: string): Promise<string> {
         const otp = crypto.randomInt(100000, 999999).toString();
@@ -91,14 +99,10 @@ export class AuthService {
         let user = await this.usersService.findByEmail(email);
 
         if (!user) {
-            // Check if there are orders with this email to pre-fill?
-            // For now, we return a mock user if not found to allow testing the dashboard
-            // In production, this would be handled differently.
             user = await this.usersService.createOrUpdate(email, { fullName: 'Guest User' });
         }
 
-        // MOCK: JWT token issuance
-        const token = `mock-jwt-token-for-${user.id}`;
+        const token = this.generateJwt(user);
 
         return { user, token };
     }
@@ -111,5 +115,56 @@ export class AuthService {
             return null;
         }
         return data.otp;
+    }
+
+    // ============================================
+    // Password-based Login (for Admins)
+    // ============================================
+
+    async loginWithPassword(email: string, password: string): Promise<{ user: any; token: string }> {
+        const user = await this.usersService.findByEmailWithPassword(email);
+
+        if (!user || !user.password) {
+            throw new UnauthorizedException('Invalid credentials');
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            throw new UnauthorizedException('Invalid credentials');
+        }
+
+        if (user.role !== UserRole.ADMIN && user.role !== UserRole.SUPER_ADMIN) {
+            throw new UnauthorizedException('Admin access required');
+        }
+
+        const token = this.generateJwt(user);
+
+        return {
+            user: {
+                id: user.id,
+                email: user.email,
+                fullName: user.fullName,
+                role: user.role,
+            },
+            token,
+        };
+    }
+
+    async createAdminUser(email: string, password: string, fullName: string): Promise<any> {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        return this.usersService.createAdmin(email, hashedPassword, fullName);
+    }
+
+    // ============================================
+    // JWT Token Generation
+    // ============================================
+
+    private generateJwt(user: any): string {
+        const payload = {
+            sub: user.id,
+            email: user.email,
+            role: user.role,
+        };
+        return this.jwtService.sign(payload);
     }
 }

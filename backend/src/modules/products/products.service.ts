@@ -123,6 +123,16 @@ export class ProductsService {
         });
     }
 
+    /**
+     * Get a product by ID (for admin).
+     */
+    async findById(id: string): Promise<Product | null> {
+        return this.productRepository.findOne({
+            where: { id },
+            relations: ['variants', 'category'],
+        });
+    }
+
     // Admin methods
     async createProduct(data: Partial<Product>): Promise<Product> {
         const product = this.productRepository.create(data);

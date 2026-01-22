@@ -14,6 +14,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
 import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 // Entities
 import { Product, Category } from './modules/products/entities/product.entity';
@@ -87,6 +88,7 @@ import { PaymentMethod } from './modules/payment-methods/entities/payment-method
     AuthModule,
     AddressesModule,
     PaymentMethodsModule,
+    AdminModule,
   ],
   providers: [
     {

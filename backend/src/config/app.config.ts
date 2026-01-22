@@ -5,6 +5,10 @@ export default registerAs('app', () => ({
     port: parseInt(process.env.PORT ?? '3001', 10),
     apiVersion: process.env.API_VERSION || 'v1',
 
+    // JWT Configuration
+    jwtSecret: process.env.JWT_SECRET || 'default-jwt-secret-change-in-prod',
+    jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+
     // Business configuration
     countryCode: process.env.COUNTRY_CODE || 'GH',
     currency: process.env.CURRENCY || 'GHS',

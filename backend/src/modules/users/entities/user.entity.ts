@@ -7,6 +7,12 @@ import {
     Index,
 } from 'typeorm';
 
+export enum UserRole {
+    CUSTOMER = 'CUSTOMER',
+    ADMIN = 'ADMIN',
+    SUPER_ADMIN = 'SUPER_ADMIN',
+}
+
 @Entity('users')
 export class User {
     @PrimaryGeneratedColumn('uuid')
@@ -27,6 +33,16 @@ export class User {
 
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
+
+    @Column({
+        type: 'enum',
+        enum: UserRole,
+        default: UserRole.CUSTOMER,
+    })
+    role: UserRole;
+
+    @Column({ nullable: true, select: false })
+    password: string;
 
     // Settings fields
     @Column({ length: 3, default: 'GHS' })
