@@ -3,12 +3,12 @@ import { IsString, IsOptional, IsBoolean, IsIn, Length } from 'class-validator';
 export class UpdateProfileDto {
     @IsOptional()
     @IsString()
-    @Length(1, 255)
+    @Length(0, 255)
     fullName?: string;
 
     @IsOptional()
     @IsString()
-    @Length(1, 20)
+    @Length(0, 20)
     phoneNumber?: string;
 }
 
