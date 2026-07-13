@@ -41,6 +41,8 @@ A full-stack e-commerce platform for Ghana-based clothing retail with physical s
 
 ### 1. Database Setup
 
+Production uses Supabase Postgres. See [`SUPABASE_SETUP.md`](./SUPABASE_SETUP.md) for the connection, SSL, migration, and seeding workflow. Local PostgreSQL is still supported.
+
 ```bash
 # Create database
 psql -U postgres
@@ -183,6 +185,10 @@ DATABASE_PORT=5432
 DATABASE_NAME=ecommerce_ghana
 DATABASE_USER=postgres
 DATABASE_PASSWORD=postgres
+
+# Production alternative (Supabase Session pooler)
+DATABASE_URL=postgresql://postgres.PROJECT_REF:PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres
+DATABASE_SSL=true
 
 REDIS_HOST=localhost
 REDIS_PORT=6379

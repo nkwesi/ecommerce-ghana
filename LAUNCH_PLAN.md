@@ -22,7 +22,7 @@ Completed in the first implementation pass:
 Remaining launch blockers:
 
 - Paystack merchant credentials and a real low-value Mobile Money/card test
-- Production PostgreSQL provisioning, an initial migration, deployment, domain, HTTPS, backups, logs, and alerts
+- Supabase project connection credentials, an initial migration, deployment, domain, HTTPS, backups, logs, and alerts
 - Real business identity, support details, delivery fees/areas, VAT treatment, and approved policy wording
 - Customer confirmation and internal new-order notification provider credentials
 - Final visual browser/device QA (the in-app browser was unavailable during the first implementation pass)

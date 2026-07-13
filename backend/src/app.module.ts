@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 
 import { databaseConfig, redisConfig, appConfig } from './config';
 import { ProductsModule } from './modules/products/products.module';
@@ -41,13 +42,19 @@ import { PaymentMethod } from './modules/payment-methods/entities/payment-method
     // Database
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
         type: 'postgres',
-        host: configService.get<string>('database.host'),
-        port: configService.get<number>('database.port'),
-        database: configService.get<string>('database.database'),
-        username: configService.get<string>('database.username'),
-        password: configService.get<string>('database.password'),
+        ...(configService.get<string>('database.url')
+          ? { url: configService.get<string>('database.url') }
+          : {
+              host: configService.get<string>('database.host'),
+              port: configService.get<number>('database.port'),
+              database: configService.get<string>('database.database'),
+              username: configService.get<string>('database.username'),
+              password: configService.get<string>('database.password'),
+            }),
+        ssl: configService.get('database.ssl'),
+        extra: { max: configService.get<number>('database.poolMax', 10) },
         entities: [
           Product,
           Category,
@@ -64,8 +71,9 @@ import { PaymentMethod } from './modules/payment-methods/entities/payment-method
           Address,
           PaymentMethod,
         ],
-        synchronize: configService.get('NODE_ENV') === 'development',
-        logging: configService.get('NODE_ENV') === 'development',
+        synchronize: configService.get('app.nodeEnv') === 'development',
+        migrationsRun: false,
+        logging: configService.get('app.nodeEnv') === 'development',
       }),
       inject: [ConfigService],
     }),
