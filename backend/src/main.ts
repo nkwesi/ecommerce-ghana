@@ -10,10 +10,23 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const port = configService.get<number>('app.port', 3001);
+  const nodeEnv = configService.get<string>('app.nodeEnv', 'development');
+  const jwtSecret = configService.get<string>('app.jwtSecret', '');
+  const paymentMode = configService.get<string>('app.paymentMode', 'demo');
+
+  if (nodeEnv === 'production' && jwtSecret === 'default-jwt-secret-change-in-prod') {
+    throw new Error('JWT_SECRET must be configured in production');
+  }
+  if (nodeEnv === 'production' && paymentMode !== 'paystack') {
+    throw new Error('PAYMENT_MODE must be paystack in production');
+  }
+  if (paymentMode === 'paystack' && !configService.get<string>('app.paystackSecretKey')) {
+    throw new Error('PAYSTACK_SECRET_KEY is required when PAYMENT_MODE=paystack');
+  }
 
   // Enable CORS for frontend
   app.enableCors({
-    origin: ['http://localhost:3000'],
+    origin: configService.get<string[]>('app.corsOrigins', ['http://localhost:3000']),
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   });

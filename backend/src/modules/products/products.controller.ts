@@ -2,7 +2,7 @@ import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { InventoryService } from '../inventory/inventory.service';
 
-@Controller('api/v1/products')
+@Controller('products')
 export class ProductsController {
     constructor(
         private readonly productsService: ProductsService,
@@ -47,6 +47,17 @@ export class ProductsController {
     /**
      * Get a product by slug.
      */
+    @Get('categories')
+    async getCategories() {
+        const categories = await this.productsService.findAllCategories();
+        return categories.map((c) => ({
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+            description: c.description,
+        }));
+    }
+
     @Get(':slug')
     async findOne(@Param('slug') slug: string) {
         const { product, stockByVariant } = await this.productsService.findBySlug(slug);
@@ -99,20 +110,6 @@ export class ProductsController {
             sellableStock: stock.sellableStock,
             inStock: stock.sellableStock > 0,
         };
-    }
-
-    /**
-     * Get all categories.
-     */
-    @Get('/categories')
-    async getCategories() {
-        const categories = await this.productsService.findAllCategories();
-        return categories.map((c) => ({
-            id: c.id,
-            name: c.name,
-            slug: c.slug,
-            description: c.description,
-        }));
     }
 
     private getPriceRange(variants: { price: number }[]): { min: number; max: number } {

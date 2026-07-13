@@ -78,8 +78,16 @@ export class AuthController {
         @Body('setupKey') setupKey: string,
         @Res() res: Response,
     ) {
+        if (process.env.NODE_ENV === 'production' && process.env.ADMIN_SETUP_ENABLED !== 'true') {
+            return res.status(HttpStatus.NOT_FOUND).json({ message: 'Not found' });
+        }
+
         // Simple setup key check - in production, use a more secure method
-        const validSetupKey = process.env.ADMIN_SETUP_KEY || 'admin-setup-secret';
+        const validSetupKey = process.env.ADMIN_SETUP_KEY;
+
+        if (!validSetupKey) {
+            return res.status(HttpStatus.SERVICE_UNAVAILABLE).json({ message: 'Admin setup is not configured' });
+        }
 
         if (setupKey !== validSetupKey) {
             return res.status(HttpStatus.FORBIDDEN).json({ message: 'Invalid setup key' });

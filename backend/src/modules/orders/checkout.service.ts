@@ -45,6 +45,9 @@ export class CheckoutService {
     private readonly vatRate: number;
     private readonly currency: string;
     private readonly countryCode: string;
+    private readonly paymentMode: string;
+    private readonly paystackSecretKey: string;
+    private readonly frontendUrl: string;
 
     constructor(
         @InjectRepository(Order)
@@ -60,9 +63,12 @@ export class CheckoutService {
         private reservationService: ReservationService,
         private productsService: ProductsService,
     ) {
-        this.vatRate = this.configService.get<number>('app.vatRate', 0.125);
+        this.vatRate = this.configService.get<number>('app.vatRate', 0);
         this.currency = this.configService.get<string>('app.currency', 'GHS');
         this.countryCode = this.configService.get<string>('app.countryCode', 'GH');
+        this.paymentMode = this.configService.get<string>('app.paymentMode', 'demo');
+        this.paystackSecretKey = this.configService.get<string>('app.paystackSecretKey', '');
+        this.frontendUrl = this.configService.get<string>('app.frontendUrl', 'http://localhost:3000');
     }
 
     /**
@@ -121,9 +127,9 @@ export class CheckoutService {
                 });
             }
 
-            const taxAmount = subtotal * this.vatRate;
+            const taxAmount = Number((subtotal * this.vatRate).toFixed(2));
             const shippingCost = this.calculateShipping(subtotal);
-            const total = subtotal + taxAmount + shippingCost;
+            const total = Number((subtotal + taxAmount + shippingCost).toFixed(2));
 
             // Step 4: Generate order number
             const orderNumber = await this.generateOrderNumber();
@@ -177,13 +183,18 @@ export class CheckoutService {
                 );
             }
 
-            // Step 9: Create payment intent (mock for now)
-            const paymentIntentId = `pi_mock_${uuidv4().replace(/-/g, '')}`;
-            const checkoutUrl = `http://localhost:3000/checkout/payment?order=${savedOrder.orderNumber}&intent=${paymentIntentId}`;
+            // Step 9: Initialize hosted payment or use an explicit local demo flow.
+            const paymentIntentId = `GH_${uuidv4().replace(/-/g, '')}`;
+            const checkoutUrl = await this.initializePayment(
+                paymentIntentId,
+                savedOrder,
+                customer.email,
+                total,
+            );
 
             const payment = manager.create(Payment, {
                 orderId: savedOrder.id,
-                paymentProvider: 'polar',
+                paymentProvider: this.paymentMode === 'paystack' ? 'paystack' : 'demo',
                 paymentIntentId,
                 checkoutUrl,
                 amount: total,
@@ -235,5 +246,48 @@ export class CheckoutService {
             return 0;
         }
         return 25;
+    }
+
+    private async initializePayment(
+        reference: string,
+        order: Order,
+        email: string,
+        total: number,
+    ): Promise<string> {
+        const orderUrl = `${this.frontendUrl}/order/${order.orderNumber}`;
+        if (this.paymentMode !== 'paystack') {
+            return `${orderUrl}?demo=1`;
+        }
+
+        const response = await fetch('https://api.paystack.co/transaction/initialize', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${this.paystackSecretKey}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email,
+                amount: Math.round(total * 100),
+                currency: this.currency,
+                reference,
+                callback_url: `${orderUrl}?email=${encodeURIComponent(email)}`,
+                metadata: {
+                    orderId: order.id,
+                    orderNumber: order.orderNumber,
+                },
+            }),
+        });
+
+        const result = await response.json() as {
+            status?: boolean;
+            message?: string;
+            data?: { authorization_url?: string };
+        };
+
+        if (!response.ok || !result.status || !result.data?.authorization_url) {
+            throw new BadRequestException(result.message || 'Unable to initialize payment');
+        }
+
+        return result.data.authorization_url;
     }
 }

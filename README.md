@@ -8,7 +8,7 @@ A full-stack e-commerce platform for Ghana-based clothing retail with physical s
 - **Frontend**: Next.js 15 (React, TypeScript, Tailwind CSS)
 - **Database**: PostgreSQL
 - **Cache**: Redis (optional)
-- **Payments**: Polar (mock mode for development)
+- **Payments**: Paystack-ready hosted checkout (explicit demo mode for development)
 
 ## Features
 
@@ -27,7 +27,7 @@ A full-stack e-commerce platform for Ghana-based clothing retail with physical s
 - ✅ Store selection for fulfillment
 
 ### Payment Processing
-- ✅ Polar payment integration (test mode)
+- ✅ Paystack-ready transaction initialization and signed webhook confirmation
 - ✅ **Webhook-driven order confirmation** (secure)
 - ✅ Idempotent webhook handling
 - ✅ Payment success/failure simulation
@@ -98,7 +98,7 @@ ecommerce-ghana/
 │   │   │   ├── products/      # Product catalog
 │   │   │   ├── inventory/     # Stock & reservations
 │   │   │   ├── orders/        # Checkout & orders
-│   │   │   ├── payments/      # Polar integration
+│   │   │   ├── payments/      # Paystack integration
 │   │   │   └── tasks/         # Scheduled jobs
 │   │   └── database/          # Seed scripts
 │   └── .env
@@ -130,7 +130,7 @@ ecommerce-ghana/
 - `GET /api/v1/orders/:orderNumber` - Get order
 
 ### Webhooks
-- `POST /api/v1/webhooks/polar` - Polar payment webhooks
+- `POST /api/v1/webhooks/paystack` - Paystack payment webhooks
 - `POST /api/v1/webhooks/test/success` - Simulate success (dev only)
 - `POST /api/v1/webhooks/test/failure` - Simulate failure (dev only)
 
@@ -149,9 +149,9 @@ ecommerce-ghana/
 4. Notice the 10-minute reservation timer
 5. Proceed to checkout
 6. Fill in contact and shipping info
-7. Click "Pay" to go to mock payment page
-8. Click "Simulate Successful Payment"
-9. View order confirmation
+7. In demo mode, create a charge-free test order
+8. In API mode, continue to hosted Paystack checkout
+9. View order confirmation and status
 
 ## Key Design Decisions
 
@@ -196,7 +196,7 @@ POLAR_MODE=test
 
 COUNTRY_CODE=GH
 CURRENCY=GHS
-VAT_RATE=0.125
+VAT_RATE=0 # Confirm tax treatment with an accountant before launch
 DEFAULT_RESERVATION_MINUTES=10
 STOCK_SAFETY_BUFFER=1
 ```
@@ -213,7 +213,7 @@ NEXT_PUBLIC_CURRENCY_SYMBOL=₵
 To complete production readiness:
 
 1. **Inventory Sync**: Implement sync from your POS/ERP system
-2. **Real Polar Integration**: Register and configure production credentials
+2. **Paystack Activation**: Complete merchant verification and configure production credentials
 3. **Email Notifications**: Implement order confirmation emails
 4. **Admin Dashboard**: Build order management interface
 5. **Authentication**: Add admin user authentication

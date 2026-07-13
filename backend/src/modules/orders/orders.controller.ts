@@ -10,10 +10,16 @@ import {
     HttpStatus,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
-import { CheckoutService, CustomerInfo, ShippingInfo } from './checkout.service';
+import { CheckoutService } from './checkout.service';
 import { OrderStatus } from './entities/order.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
+import { UseGuards } from '@nestjs/common';
+import { CheckoutDto } from './dto/checkout.dto';
 
-@Controller('api/v1')
+@Controller()
 export class OrdersController {
     constructor(
         private readonly ordersService: OrdersService,
@@ -26,11 +32,7 @@ export class OrdersController {
     @Post('checkout')
     async checkout(
         @Body()
-        body: {
-            sessionId: string;
-            customer: CustomerInfo;
-            shipping: ShippingInfo;
-        },
+        body: CheckoutDto,
     ) {
         try {
             const result = await this.checkoutService.processCheckout(
@@ -74,8 +76,11 @@ export class OrdersController {
     ) {
         const order = await this.ordersService.findByOrderNumber(orderNumber);
 
-        // Simple email verification
-        if (email && order.customerEmail.toLowerCase() !== email.toLowerCase()) {
+        if (!email) {
+            throw new HttpException('Email is required', HttpStatus.BAD_REQUEST);
+        }
+
+        if (order.customerEmail.toLowerCase() !== email.toLowerCase()) {
             throw new HttpException('Email does not match', HttpStatus.FORBIDDEN);
         }
 
@@ -116,7 +121,9 @@ export class OrdersController {
     }
 }
 
-@Controller('api/v1/admin/orders')
+@Controller('admin/orders')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
 export class AdminOrdersController {
     constructor(private readonly ordersService: OrdersService) { }
 

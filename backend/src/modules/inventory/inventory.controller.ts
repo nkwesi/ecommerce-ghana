@@ -11,7 +11,7 @@ import {
 import { InventoryService } from './inventory.service';
 import { ReservationService } from './reservation.service';
 
-@Controller('api/v1/inventory')
+@Controller('inventory')
 export class InventoryController {
     constructor(
         private readonly inventoryService: InventoryService,

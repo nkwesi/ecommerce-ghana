@@ -30,7 +30,7 @@ export class Payment {
     @JoinColumn({ name: 'order_id' })
     order: Order;
 
-    @Column({ name: 'payment_provider', length: 50, default: 'polar' })
+    @Column({ name: 'payment_provider', length: 50, default: 'demo' })
     paymentProvider: string;
 
     @Column({ name: 'payment_intent_id', length: 255, unique: true })
