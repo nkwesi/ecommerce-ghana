@@ -4,7 +4,7 @@ Target launch: **Thursday, 16 July 2026**
 
 ## Current readiness
 
-Status: **Demo storefront complete; production connections still required before accepting real orders.**
+Status: **Demo storefront and Supabase database complete; payments, deployment, and business inputs are still required before accepting real orders.**
 
 Completed in the first implementation pass:
 
@@ -18,11 +18,13 @@ Completed in the first implementation pass:
 - [x] Added production secret/CORS checks, a health endpoint, successful production builds, and HTTP route smoke checks.
 - [x] Updated the default tax rate to zero until accountant-confirmed treatment is configured.
 - [x] Cleared the backend dependency audit with non-breaking updates.
+- [x] Created and linked the GhanaStyle Supabase project, applied reviewed migrations, enabled RLS, and loaded the matching mock catalog and inventory.
+- [x] Verified 12 products, 106 variants, and 318 inventory rows through both SQL and the running backend API; Supabase's security advisor reports no issues.
 
 Remaining launch blockers:
 
 - Paystack merchant credentials and a real low-value Mobile Money/card test
-- Supabase project connection credentials, an initial migration, deployment, domain, HTTPS, backups, logs, and alerts
+- Production deployment, domain, HTTPS, Supabase backups, logs, and alerts
 - Real business identity, support details, delivery fees/areas, VAT treatment, and approved policy wording
 - Customer confirmation and internal new-order notification provider credentials
 - Final visual browser/device QA (the in-app browser was unavailable during the first implementation pass)
@@ -59,15 +61,15 @@ Defer until after launch: saved cards, customer OTP accounts, wishlists, reviews
 
 ### Engineering
 
-- [ ] Recover or create the Next.js storefront and implement the launch pages
-- [ ] Fix all double-prefixed API routes and add an API health endpoint
-- [ ] Replace inline checkout request types with validated DTOs
-- [ ] remove production defaults for JWT/admin/payment secrets and fail startup when required variables are missing
-- [ ] Restrict CORS to configured storefront domains
-- [ ] Disable payment simulation and admin setup routes in production
-- [ ] Require valid webhook signatures; keep payment handling idempotent
-- [ ] Add production database migrations; do not use schema synchronization in production
-- [ ] Import the approved launch catalog and verify images, prices, variants, and stock
+- [x] Recover or create the Next.js storefront and implement the launch pages
+- [x] Fix all double-prefixed API routes and add an API health endpoint
+- [x] Replace inline checkout request types with validated DTOs
+- [x] Remove production defaults for JWT/admin/payment secrets and fail startup when required variables are missing
+- [x] Restrict CORS to configured storefront domains
+- [x] Disable payment simulation and admin setup routes in production
+- [x] Require valid webhook signatures; keep payment handling idempotent
+- [x] Add production database migrations; do not use schema synchronization in production
+- [x] Import and verify the mock catalog, images, prices, variants, and stock in Supabase
 - [ ] Add smoke tests for catalog, reservation, checkout, order lookup, and protected admin access
 
 Exit gate: A customer can browse the real catalog, add a specific size/color to cart, enter delivery details, and reach a test payment page on mobile.

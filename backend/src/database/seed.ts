@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
+import 'dotenv/config';
 
 /**
  * Seed script for development data.
@@ -8,9 +9,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 // Sample data
 const categories = [
-    { id: uuidv4(), name: 'Mens Wear', slug: 'mens-wear', description: 'Mens clothing collection', sortOrder: 1 },
-    { id: uuidv4(), name: 'Womens Wear', slug: 'womens-wear', description: 'Womens clothing collection', sortOrder: 2 },
-    { id: uuidv4(), name: 'Traditional', slug: 'traditional', description: 'Traditional Ghanaian clothing', sortOrder: 3 },
+    { id: uuidv4(), name: 'Women', slug: 'women', description: 'Modern womenswear', sortOrder: 1 },
+    { id: uuidv4(), name: 'Men', slug: 'men', description: 'Modern menswear', sortOrder: 2 },
+    { id: uuidv4(), name: 'Essentials', slug: 'essentials', description: 'Everyday wardrobe essentials', sortOrder: 3 },
 ];
 
 const stores = [
@@ -65,6 +66,8 @@ function createProduct(
     categoryId: string,
     basePrice: number,
     variants: { size: string; color: string; colorHex: string; price: number }[],
+    image: string,
+    skuBase: string,
 ) {
     const productId = uuidv4();
     return {
@@ -77,12 +80,12 @@ function createProduct(
             basePrice,
             isActive: true,
             isFeatured: basePrice > 200,
-            images: [`/images/${slug}-1.jpg`, `/images/${slug}-2.jpg`],
+            images: [`/products/${image}`],
         },
         variants: variants.map((v, i) => ({
             id: uuidv4(),
             productId,
-            sku: `${slug.toUpperCase().replace(/-/g, '')}-${v.size}-${v.color.replace(/\s+/g, '').toUpperCase()}`,
+            sku: `${skuBase.toUpperCase().replace(/-/g, '')}-${v.color.slice(0, 3).toUpperCase()}-${v.size}`,
             sizeCode: v.size,
             sizeModel: 'STANDARD_V1',
             color: v.color,
@@ -93,86 +96,96 @@ function createProduct(
     };
 }
 
-const sizes = ['S', 'M', 'L', 'XL', 'XXL'];
-const colors = [
-    { name: 'Black', hex: '#000000' },
-    { name: 'White', hex: '#FFFFFF' },
-    { name: 'Navy Blue', hex: '#000080' },
-    { name: 'Kente Gold', hex: '#DAA520' },
-    { name: 'Ankara Red', hex: '#C41E3A' },
-];
+const sizes = ['S', 'M', 'L', 'XL'];
+const expand = (productSizes: string[], productColors: { name: string; hex: string }[], price: number) =>
+    productColors.flatMap((color) => productSizes.map((size) => ({
+        size, color: color.name, colorHex: color.hex, price,
+    })));
 
 const products = [
     createProduct(
-        'Classic Kente Print Shirt',
-        'classic-kente-print-shirt',
-        'Authentic Ghanaian Kente print shirt with modern fit. Perfect for special occasions.',
-        categories[2].id,
-        250,
-        sizes.map((size) => ({
-            size,
-            color: 'Kente Gold',
-            colorHex: '#DAA520',
-            price: 250,
-        })),
+        'The Ama Midi Dress', 'the-ama-midi-dress',
+        'A clean, sculpted midi with an easy drape. Designed for warm afternoons and polished evenings.',
+        categories[0].id, 390,
+        expand(sizes, [{ name: 'Midnight', hex: '#171717' }, { name: 'Cocoa', hex: '#6b4435' }], 390),
+        'dress.png', 'ama-midi',
     ),
     createProduct(
-        'Premium Cotton T-Shirt',
-        'premium-cotton-tshirt',
-        'High-quality 100% cotton t-shirt. Comfortable for everyday wear.',
-        categories[0].id,
-        85,
-        sizes.flatMap((size) =>
-            colors.slice(0, 3).map((c) => ({
-                size,
-                color: c.name,
-                colorHex: c.hex,
-                price: 85,
-            })),
-        ),
+        'Relaxed Poplin Shirt', 'relaxed-poplin-shirt',
+        'Breathable cotton poplin cut with a relaxed shoulder and a crisp, versatile finish.',
+        categories[1].id, 245,
+        expand(sizes, [{ name: 'Cloud', hex: '#f1eee8' }, { name: 'Sky', hex: '#8aa7be' }], 245),
+        'shirt.png', 'poplin-shirt',
     ),
     createProduct(
-        'African Print Maxi Dress',
-        'african-print-maxi-dress',
-        'Elegant African print maxi dress. Beautiful ankara patterns.',
-        categories[1].id,
-        320,
-        ['S', 'M', 'L'].flatMap((size) =>
-            [colors[0], colors[4]].map((c) => ({
-                size,
-                color: c.name,
-                colorHex: c.hex,
-                price: 320,
-            })),
-        ),
+        'Osu Tailored Blazer', 'osu-tailored-blazer',
+        'An unlined tailored layer with a confident silhouette and lightweight construction.',
+        categories[0].id, 620,
+        expand(sizes, [{ name: 'Sand', hex: '#c5aa86' }, { name: 'Ink', hex: '#24252a' }], 620),
+        'blazer.png', 'osu-blazer',
     ),
     createProduct(
-        'Slim Fit Chinos',
-        'slim-fit-chinos',
-        'Modern slim fit chinos in premium fabric. Perfect for office or casual.',
-        categories[0].id,
-        180,
-        ['30', '32', '34', '36', '38'].flatMap((size) =>
-            [colors[0], { name: 'Khaki', hex: '#C3B091' }, colors[2]].map((c) => ({
-                size,
-                color: c.name,
-                colorHex: c.hex,
-                price: 180,
-            })),
-        ),
+        'Everyday Weight Tee', 'everyday-weight-tee',
+        'A substantial cotton tee with a soft hand feel, neat neckline, and easy everyday shape.',
+        categories[2].id, 135,
+        expand(sizes, [{ name: 'Black', hex: '#171717' }, { name: 'Ivory', hex: '#eee9df' }, { name: 'Clay', hex: '#a55f45' }], 135),
+        'tee.png', 'weight-tee',
     ),
     createProduct(
-        'Adinkra Symbol Hoodie',
-        'adinkra-symbol-hoodie',
-        'Cozy hoodie featuring traditional Adinkra symbols. Ghana heritage collection.',
-        categories[2].id,
-        220,
-        sizes.map((size) => ({
-            size,
-            color: 'Black',
-            colorHex: '#000000',
-            price: 220,
-        })),
+        'Wide-Leg Trouser', 'wide-leg-trouser',
+        'Fluid high-rise trousers made to move, with a clean waistband and full-length leg.',
+        categories[0].id, 320,
+        expand(['8', '10', '12', '14', '16'], [{ name: 'Espresso', hex: '#3a2925' }, { name: 'Olive', hex: '#6d7052' }], 320),
+        'pants.png', 'wide-trouser',
+    ),
+    createProduct(
+        'Soft Knit Cardigan', 'soft-knit-cardigan',
+        'A breathable fine knit for cool evenings, finished with tonal buttons and a relaxed cuff.',
+        categories[0].id, 285,
+        expand(sizes, [{ name: 'Oat', hex: '#d4c5ad' }, { name: 'Wine', hex: '#6c2638' }], 285),
+        'cardigan.png', 'knit-cardigan',
+    ),
+    createProduct(
+        'Utility Overshirt', 'utility-overshirt',
+        'A structured cotton overshirt with practical pockets and enough room for layering.',
+        categories[1].id, 410,
+        expand(sizes, [{ name: 'Forest', hex: '#3e4d3b' }, { name: 'Stone', hex: '#8a8175' }], 410),
+        'jacket.png', 'utility-shirt',
+    ),
+    createProduct(
+        'Column Midi Skirt', 'column-midi-skirt',
+        'A minimal column skirt with a comfortable back vent and an elegant, close fit.',
+        categories[0].id, 260,
+        expand(['8', '10', '12', '14', '16'], [{ name: 'Black', hex: '#171717' }, { name: 'Merlot', hex: '#682b3a' }], 260),
+        'skirt.png', 'column-skirt',
+    ),
+    createProduct(
+        'Textured Crew Knit', 'textured-crew-knit',
+        'A refined crew-neck knit with a subtle texture and comfortable midweight feel.',
+        categories[1].id, 310,
+        expand(sizes, [{ name: 'Charcoal', hex: '#4d4d4d' }, { name: 'Cream', hex: '#e8dfcf' }], 310),
+        'sweater.png', 'crew-knit',
+    ),
+    createProduct(
+        'Draped Neck Top', 'draped-neck-top',
+        'A softly draped top that dresses up denim and pairs effortlessly with tailoring.',
+        categories[0].id, 195,
+        expand(sizes, [{ name: 'Pearl', hex: '#e6ddd0' }, { name: 'Cocoa', hex: '#735044' }], 195),
+        'top.png', 'draped-top',
+    ),
+    createProduct(
+        'Lightweight City Coat', 'lightweight-city-coat',
+        'A polished, light layer with a long line and understated details for everyday wear.',
+        categories[0].id, 720,
+        expand(sizes, [{ name: 'Camel', hex: '#b58c64' }, { name: 'Black', hex: '#171717' }], 720),
+        'coat.png', 'city-coat',
+    ),
+    createProduct(
+        'Tailored Weekend Shorts', 'tailored-weekend-shorts',
+        'Clean-cut cotton shorts designed for easy weekends and warm days in the city.',
+        categories[1].id, 210,
+        expand(['30', '32', '34', '36', '38'], [{ name: 'Khaki', hex: '#b8a27e' }, { name: 'Navy', hex: '#273448' }], 210),
+        'shorts.png', 'weekend-shorts',
     ),
 ];
 
@@ -277,7 +290,7 @@ async function seed() {
                     product.basePrice,
                     product.isActive,
                     product.isFeatured,
-                    `{${product.images.join(',')}}`,
+                    product.images.join(','),
                 ],
             );
 
@@ -314,10 +327,11 @@ async function seed() {
         console.log(`Created inventory for ${stores.length} stores`);
 
         await queryRunner.commitTransaction();
-        console.log('✅ Seed completed successfully!');
+        console.log('Seed completed successfully.');
     } catch (error) {
         await queryRunner.rollbackTransaction();
-        console.error('❌ Seed failed:', error);
+        console.error('Seed failed:', error);
+        throw error;
     } finally {
         await queryRunner.release();
         await AppDataSource.destroy();
