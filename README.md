@@ -1,4 +1,4 @@
-# GhanaStyle E-commerce Platform
+# Drobe 233 E-commerce Platform
 
 A full-stack e-commerce platform for Ghana-based clothing retail with physical store inventory integration.
 

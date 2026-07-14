@@ -1,4 +1,4 @@
-# GhanaStyle storefront
+# Drobe 233 storefront
 
 This is the launch storefront rebuilt as a normal Next.js application. It currently uses a local mock catalog so the customer experience can be tested before final inventory arrives.
 

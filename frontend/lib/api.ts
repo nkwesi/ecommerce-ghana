@@ -1,3 +1,5 @@
+import type { DeliveryZoneId } from './delivery-zones';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
 export type CheckoutPayload = {
@@ -9,6 +11,7 @@ export type CheckoutPayload = {
     addressLine2?: string;
     city: string;
     region: string;
+    deliveryZone: DeliveryZoneId;
     phone: string;
     deliveryInstructions?: string;
   };

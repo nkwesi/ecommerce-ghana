@@ -1,4 +1,4 @@
-# GhanaStyle 3-Day Launch Plan
+# Drobe 233 3-Day Launch Plan
 
 Target launch: **Thursday, 16 July 2026**
 
@@ -18,10 +18,11 @@ Completed in the first implementation pass:
 - [x] Added production secret/CORS checks, a health endpoint, successful production builds, and HTTP route smoke checks.
 - [x] Updated the default tax rate to zero until accountant-confirmed treatment is configured.
 - [x] Cleared the backend dependency audit with non-breaking updates.
-- [x] Created and linked the GhanaStyle Supabase project, applied reviewed migrations, enabled RLS, and loaded the matching mock catalog and inventory.
+- [x] Created and linked the Supabase project, applied reviewed migrations, enabled RLS, and loaded the matching mock catalog and inventory.
 - [x] Verified 12 products, 106 variants, and 318 inventory rows through both SQL and the running backend API; Supabase's security advisor reports no issues.
 - [x] Connected Paystack test mode and verified server-side GHS transaction initialization returns a genuine hosted checkout URL.
 - [x] Deployed the API to Railway and the storefront to Vercel, connected their production origins, and verified the key HTTPS routes and CORS preflight.
+- [x] Selected the Drobe 233 working brand and configured three Accra delivery zones using published third-party courier rates: GH₵35, GH₵50, and GH₵60.
 
 Remaining launch blockers:
 
@@ -55,7 +56,8 @@ Defer until after launch: saved cards, customer OTP accounts, wishlists, reviews
 - [x] Rebuild the unavailable storefront as normal tracked project files
 - [ ] Provide logo, brand colors, store name, support phone/WhatsApp, email, pickup address, and social links
 - [ ] Provide launch catalog: SKU, name, description, category, GHS price, sizes, colors, per-variant stock, and 2-4 optimized images per product
-- [ ] Define delivery areas, price per area, delivery times, free-shipping rule, and whether pickup is allowed
+- [x] Define launch delivery areas, zone prices, and third-party courier fulfilment
+- [ ] Confirm courier onboarding, dispatch cutoff, pickup address, and whether customer pickup is allowed
 - [ ] Approve returns/refunds, privacy, terms, and delivery wording
 - [ ] Confirm VAT registration status and pricing treatment with an accountant
 - [ ] Start/complete Paystack merchant verification and obtain test/live credentials

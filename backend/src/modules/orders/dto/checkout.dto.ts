@@ -1,12 +1,14 @@
 import { Type } from 'class-transformer';
 import {
     IsEmail,
+    IsEnum,
     IsNotEmpty,
     IsOptional,
     IsString,
     MaxLength,
     ValidateNested,
 } from 'class-validator';
+import { DeliveryZone } from '../delivery-zones';
 
 export class CustomerInfoDto {
     @IsEmail()
@@ -49,6 +51,9 @@ export class ShippingInfoDto {
     @IsNotEmpty()
     @MaxLength(100)
     region: string;
+
+    @IsEnum(DeliveryZone)
+    deliveryZone: DeliveryZone;
 
     @IsOptional()
     @IsString()

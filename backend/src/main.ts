@@ -14,6 +14,10 @@ async function bootstrap() {
   const jwtSecret = configService.get<string>('app.jwtSecret', '');
   const paymentMode = configService.get<string>('app.paymentMode', 'demo');
 
+  if (nodeEnv === 'production') {
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  }
+
   if (nodeEnv === 'production' && jwtSecret === 'default-jwt-secret-change-in-prod') {
     throw new Error('JWT_SECRET must be configured in production');
   }

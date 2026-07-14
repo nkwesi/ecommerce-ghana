@@ -10,6 +10,7 @@ import { InventoryReservation, ReservationStatus } from '../inventory/entities/i
 import { ProductsService } from '../products/products.service';
 import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
 import { v4 as uuidv4 } from 'uuid';
+import { DeliveryZone, getDeliveryFee } from './delivery-zones';
 
 export interface CartItem {
     variantId: string;
@@ -28,6 +29,7 @@ export interface ShippingInfo {
     addressLine2?: string;
     city: string;
     region?: string;
+    deliveryZone: DeliveryZone;
     postalCode?: string;
     phone: string;
     deliveryInstructions?: string;
@@ -128,7 +130,7 @@ export class CheckoutService {
             }
 
             const taxAmount = Number((subtotal * this.vatRate).toFixed(2));
-            const shippingCost = this.calculateShipping(subtotal);
+            const shippingCost = getDeliveryFee(shipping.deliveryZone);
             const total = Number((subtotal + taxAmount + shippingCost).toFixed(2));
 
             // Step 4: Generate order number
@@ -147,6 +149,10 @@ export class CheckoutService {
                 total,
                 currency: this.currency,
                 countryCode: this.countryCode,
+                metadata: {
+                    deliveryZone: shipping.deliveryZone,
+                    deliveryProvider: 'third-party courier',
+                },
             });
 
             const savedOrder = await manager.save(Order, order);
@@ -235,17 +241,6 @@ export class CheckoutService {
 
         const sequence = String(count + 1).padStart(4, '0');
         return `GH-${dateStr}-${sequence}`;
-    }
-
-    /**
-     * Calculate shipping cost based on order subtotal.
-     */
-    private calculateShipping(subtotal: number): number {
-        // Free shipping over 500 GHS, otherwise 25 GHS flat rate
-        if (subtotal >= 500) {
-            return 0;
-        }
-        return 25;
     }
 
     private async initializePayment(

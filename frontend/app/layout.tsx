@@ -5,9 +5,9 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 
 export const metadata: Metadata = {
-  title: { default: 'GhanaStyle — Considered clothing', template: '%s — GhanaStyle' },
-  description: 'Modern, considered clothing designed for life in Ghana.',
-  metadataBase: new URL('https://example.com'),
+  title: { default: 'Drobe 233 — Style, delivered', template: '%s — Drobe 233' },
+  description: 'Modern clothing delivered across Accra.',
+  metadataBase: new URL('https://ghanastyle-storefront.vercel.app'),
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
