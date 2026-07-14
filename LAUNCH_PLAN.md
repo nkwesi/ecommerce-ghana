@@ -20,6 +20,7 @@ Completed in the first implementation pass:
 - [x] Cleared the backend dependency audit with non-breaking updates.
 - [x] Created and linked the GhanaStyle Supabase project, applied reviewed migrations, enabled RLS, and loaded the matching mock catalog and inventory.
 - [x] Verified 12 products, 106 variants, and 318 inventory rows through both SQL and the running backend API; Supabase's security advisor reports no issues.
+- [x] Connected Paystack test mode and verified server-side GHS transaction initialization returns a genuine hosted checkout URL.
 
 Remaining launch blockers:
 
@@ -78,7 +79,7 @@ Exit gate: A customer can browse the real catalog, add a specific size/color to 
 
 ### Payments and orders
 
-- [ ] Replace the Polar mock with Paystack server-side transaction initialization
+- [x] Replace the Polar mock with Paystack server-side transaction initialization
 - [ ] Store money as integer pesewas during payment calculations and verify amount, currency, reference, and order before marking paid
 - [ ] Implement and test Paystack webhook signature validation and transaction verification fallback
 - [ ] Handle success, failure, abandonment, delayed Mobile Money confirmation, duplicate events, and expired reservations
