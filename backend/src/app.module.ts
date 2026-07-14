@@ -16,6 +16,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
 import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 // Entities
 import { Product, Category } from './modules/products/entities/product.entity';
@@ -109,7 +111,9 @@ import { PaymentMethod } from './modules/payment-methods/entities/payment-method
     PaymentMethodsModule,
     AdminModule,
   ],
+  controllers: [AppController],
   providers: [
+    AppService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
