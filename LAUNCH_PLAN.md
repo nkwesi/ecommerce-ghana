@@ -4,7 +4,7 @@ Target launch: **Thursday, 16 July 2026**
 
 ## Current readiness
 
-Status: **Demo storefront and Supabase database complete; payments, deployment, and business inputs are still required before accepting real orders.**
+Status: **The demo storefront, Supabase database, Railway API, and Vercel frontend are online over HTTPS. Paystack approval, live-payment testing, business inputs, monitoring, and final QA are still required before accepting real orders.**
 
 Completed in the first implementation pass:
 
@@ -21,11 +21,12 @@ Completed in the first implementation pass:
 - [x] Created and linked the GhanaStyle Supabase project, applied reviewed migrations, enabled RLS, and loaded the matching mock catalog and inventory.
 - [x] Verified 12 products, 106 variants, and 318 inventory rows through both SQL and the running backend API; Supabase's security advisor reports no issues.
 - [x] Connected Paystack test mode and verified server-side GHS transaction initialization returns a genuine hosted checkout URL.
+- [x] Deployed the API to Railway and the storefront to Vercel, connected their production origins, and verified the key HTTPS routes and CORS preflight.
 
 Remaining launch blockers:
 
-- Paystack merchant credentials and a real low-value Mobile Money/card test
-- Production deployment, domain, HTTPS, Supabase backups, logs, and alerts
+- Paystack merchant approval, webhook dashboard setup, live credentials, and a real low-value Mobile Money/card test
+- Custom domain, Supabase backups, uptime monitoring, structured logs, and alerts
 - Real business identity, support details, delivery fees/areas, VAT treatment, and approved policy wording
 - Customer confirmation and internal new-order notification provider credentials
 - Final visual browser/device QA (the in-app browser was unavailable during the first implementation pass)
@@ -88,7 +89,8 @@ Exit gate: A customer can browse the real catalog, add a specific size/color to 
 
 ### Production
 
-- [ ] Deploy frontend, API, and managed PostgreSQL; configure HTTPS and the custom domain
+- [x] Deploy frontend, API, and managed PostgreSQL with HTTPS
+- [ ] Configure the custom domain
 - [ ] Set production environment variables and rotate any credentials used during development
 - [ ] Configure database backups, uptime monitoring, structured logs, and error alerts
 - [ ] Add robots metadata, sitemap, social preview, favicon, contact details, and basic analytics
@@ -124,7 +126,7 @@ Exit gate: A low-value live Mobile Money/card payment creates exactly one paid o
 
 Do not open public sales unless all are true:
 
-- [ ] Storefront and API are accessible over HTTPS on production domains
+- [x] Storefront and API are accessible over HTTPS on production domains
 - [ ] Live Mobile Money or card payment has been completed and reconciled
 - [ ] An order cannot be marked paid by the browser alone or by an unsigned webhook
 - [ ] Correct price, delivery, tax treatment, and final total are shown before payment
@@ -145,4 +147,4 @@ Do not open public sales unless all are true:
 
 ## Immediate next action
 
-Start Day 1 with the storefront recovery decision and the eight business inputs above. Engineering should begin the API route/security fixes in parallel with catalog preparation.
+Provide the real store identity and support details, define delivery areas and fees, review the policy wording, and configure backups/monitoring. Add the Paystack webhook and run live payment tests after merchant approval.
