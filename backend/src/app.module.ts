@@ -26,7 +26,10 @@ import { InventoryReservation } from './modules/inventory/entities/inventory-res
 import { Order } from './modules/orders/entities/order.entity';
 import { OrderItem } from './modules/orders/entities/order-item.entity';
 import { ShippingAddress } from './modules/orders/entities/shipping-address.entity';
-import { Payment, WebhookEvent } from './modules/payments/entities/payment.entity';
+import {
+  Payment,
+  WebhookEvent,
+} from './modules/payments/entities/payment.entity';
 import { User } from './modules/users/entities/user.entity';
 import { Address } from './modules/addresses/entities/address.entity';
 import { PaymentMethod } from './modules/payment-methods/entities/payment-method.entity';
@@ -42,39 +45,47 @@ import { PaymentMethod } from './modules/payment-methods/entities/payment-method
     // Database
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
-        type: 'postgres',
-        ...(configService.get<string>('database.url')
-          ? { url: configService.get<string>('database.url') }
-          : {
-              host: configService.get<string>('database.host'),
-              port: configService.get<number>('database.port'),
-              database: configService.get<string>('database.database'),
-              username: configService.get<string>('database.username'),
-              password: configService.get<string>('database.password'),
-            }),
-        ssl: configService.get('database.ssl'),
-        extra: { max: configService.get<number>('database.poolMax', 10) },
-        entities: [
-          Product,
-          Category,
-          ProductVariant,
-          Store,
-          StoreInventory,
-          InventoryReservation,
-          Order,
-          OrderItem,
-          ShippingAddress,
-          Payment,
-          WebhookEvent,
-          User,
-          Address,
-          PaymentMethod,
-        ],
-        synchronize: configService.get('app.nodeEnv') === 'development',
-        migrationsRun: false,
-        logging: configService.get('app.nodeEnv') === 'development',
-      }),
+      useFactory: (configService: ConfigService): TypeOrmModuleOptions => {
+        const databaseUrl = configService.get<string>('database.url');
+        const isDevelopment =
+          configService.get('app.nodeEnv') === 'development';
+
+        return {
+          type: 'postgres',
+          ...(databaseUrl
+            ? { url: databaseUrl }
+            : {
+                host: configService.get<string>('database.host'),
+                port: configService.get<number>('database.port'),
+                database: configService.get<string>('database.database'),
+                username: configService.get<string>('database.username'),
+                password: configService.get<string>('database.password'),
+              }),
+          ssl: configService.get('database.ssl'),
+          extra: { max: configService.get<number>('database.poolMax', 10) },
+          entities: [
+            Product,
+            Category,
+            ProductVariant,
+            Store,
+            StoreInventory,
+            InventoryReservation,
+            Order,
+            OrderItem,
+            ShippingAddress,
+            Payment,
+            WebhookEvent,
+            User,
+            Address,
+            PaymentMethod,
+          ],
+          // Remote databases are migration-only, even when a developer runs the
+          // API with NODE_ENV=development.
+          synchronize: isDevelopment && !databaseUrl,
+          migrationsRun: false,
+          logging: isDevelopment,
+        };
+      },
       inject: [ConfigService],
     }),
 
@@ -105,5 +116,4 @@ import { PaymentMethod } from './modules/payment-methods/entities/payment-method
     },
   ],
 })
-export class AppModule { }
-
+export class AppModule {}

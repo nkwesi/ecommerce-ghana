@@ -1,279 +1,317 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, LessThan } from 'typeorm';
+import { Repository, DataSource, LessThan, FindOptionsWhere } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { InventoryReservation, ReservationStatus } from './entities/inventory-reservation.entity';
+import {
+  InventoryReservation,
+  ReservationStatus,
+} from './entities/inventory-reservation.entity';
 import { StoreInventory } from './entities/store-inventory.entity';
 import { Store } from './entities/store.entity';
 
 export interface StockInfo {
-    sku: string;
-    physicalStock: number;
-    reservedStock: number;
-    safetyBuffer: number;
-    sellableStock: number;
-    storeBreakdown: {
-        storeId: string;
-        storeName: string;
-        physical: number;
-        reserved: number;
-        sellable: number;
-    }[];
+  sku: string;
+  physicalStock: number;
+  reservedStock: number;
+  safetyBuffer: number;
+  sellableStock: number;
+  storeBreakdown: {
+    storeId: string;
+    storeName: string;
+    physical: number;
+    reserved: number;
+    sellable: number;
+  }[];
 }
 
 export interface CreateReservationResult {
-    reservation: InventoryReservation;
-    store: Store;
+  reservation: InventoryReservation;
+  store: Store;
+}
+
+interface InventoryStockRow {
+  storeId: string;
+  quantity: string | number;
+  storeName: string;
+}
+
+interface ReservedStockRow {
+  storeId: string;
+  reserved: string;
 }
 
 @Injectable()
 export class ReservationService {
-    private readonly logger = new Logger(ReservationService.name);
-    private readonly reservationMinutes: number;
-    private readonly safetyBuffer: number;
+  private readonly logger = new Logger(ReservationService.name);
+  private readonly reservationMinutes: number;
+  private readonly safetyBuffer: number;
 
-    constructor(
-        @InjectRepository(InventoryReservation)
-        private reservationRepository: Repository<InventoryReservation>,
-        @InjectRepository(StoreInventory)
-        private storeInventoryRepository: Repository<StoreInventory>,
-        @InjectRepository(Store)
-        private storeRepository: Repository<Store>,
-        private dataSource: DataSource,
-        private configService: ConfigService,
-    ) {
-        this.reservationMinutes = this.configService.get<number>('app.defaultReservationMinutes', 10);
-        this.safetyBuffer = this.configService.get<number>('app.stockSafetyBuffer', 1);
+  constructor(
+    @InjectRepository(InventoryReservation)
+    private reservationRepository: Repository<InventoryReservation>,
+    @InjectRepository(StoreInventory)
+    private storeInventoryRepository: Repository<StoreInventory>,
+    @InjectRepository(Store)
+    private storeRepository: Repository<Store>,
+    private dataSource: DataSource,
+    private configService: ConfigService,
+  ) {
+    this.reservationMinutes = this.configService.get<number>(
+      'app.defaultReservationMinutes',
+      10,
+    );
+    this.safetyBuffer = this.configService.get<number>(
+      'app.stockSafetyBuffer',
+      1,
+    );
+  }
+
+  /**
+   * Get sellable stock for a SKU across all stores or a specific store.
+   * SELLABLE = physical - active_reservations - safety_buffer
+   */
+  async getSellableStock(sku: string, storeId?: string): Promise<StockInfo> {
+    // Get physical stock from all fulfillment-enabled stores
+    const query = this.storeInventoryRepository
+      .createQueryBuilder('si')
+      .innerJoin('si.store', 'store')
+      .where('si.sku = :sku', { sku })
+      .andWhere('store.isFulfillmentEnabled = :enabled', { enabled: true })
+      .andWhere('store.isActive = :active', { active: true });
+
+    if (storeId) {
+      query.andWhere('si.storeId = :storeId', { storeId });
     }
 
-    /**
-     * Get sellable stock for a SKU across all stores or a specific store.
-     * SELLABLE = physical - active_reservations - safety_buffer
-     */
-    async getSellableStock(sku: string, storeId?: string): Promise<StockInfo> {
-        // Get physical stock from all fulfillment-enabled stores
-        const query = this.storeInventoryRepository
-            .createQueryBuilder('si')
-            .innerJoin('si.store', 'store')
-            .where('si.sku = :sku', { sku })
-            .andWhere('store.isFulfillmentEnabled = :enabled', { enabled: true })
-            .andWhere('store.isActive = :active', { active: true });
+    const inventories = await query
+      .select('si.storeId', 'storeId')
+      .addSelect('si.quantity', 'quantity')
+      .addSelect('store.name', 'storeName')
+      .getRawMany<InventoryStockRow>();
 
-        if (storeId) {
-            query.andWhere('si.storeId = :storeId', { storeId });
-        }
+    // Get active reservations for this SKU
+    const activeReservations = await this.reservationRepository
+      .createQueryBuilder('r')
+      .select('r.storeId', 'storeId')
+      .addSelect('SUM(r.quantity)', 'reserved')
+      .where('r.sku = :sku', { sku })
+      .andWhere('r.status = :status', { status: ReservationStatus.ACTIVE })
+      .andWhere('r.expiresAt > :now', { now: new Date() })
+      .groupBy('r.storeId')
+      .getRawMany<ReservedStockRow>();
 
-        const inventories = await query.select([
-            'si.storeId',
-            'si.quantity',
-            'store.id',
-            'store.name',
-        ]).getRawMany();
+    const reservationMap = new Map<string, number>();
+    for (const r of activeReservations) {
+      reservationMap.set(r.storeId, parseInt(r.reserved) || 0);
+    }
 
-        // Get active reservations for this SKU
-        const activeReservations = await this.reservationRepository
-            .createQueryBuilder('r')
-            .select('r.storeId', 'storeId')
-            .addSelect('SUM(r.quantity)', 'reserved')
-            .where('r.sku = :sku', { sku })
-            .andWhere('r.status = :status', { status: ReservationStatus.ACTIVE })
-            .andWhere('r.expiresAt > :now', { now: new Date() })
-            .groupBy('r.storeId')
-            .getRawMany();
+    let totalPhysical = 0;
+    let totalReserved = 0;
+    const storeBreakdown: StockInfo['storeBreakdown'] = [];
 
-        const reservationMap = new Map<string, number>();
-        for (const r of activeReservations) {
-            reservationMap.set(r.storeId, parseInt(r.reserved) || 0);
-        }
+    for (const inv of inventories) {
+      const physical = Number(inv.quantity) || 0;
+      const reserved = reservationMap.get(inv.storeId) || 0;
+      const sellable = Math.max(0, physical - reserved - this.safetyBuffer);
 
-        let totalPhysical = 0;
-        let totalReserved = 0;
-        const storeBreakdown: StockInfo['storeBreakdown'] = [];
+      totalPhysical += physical;
+      totalReserved += reserved;
 
-        for (const inv of inventories) {
-            const physical = inv.si_quantity || 0;
-            const reserved = reservationMap.get(inv.si_storeId) || 0;
-            const sellable = Math.max(0, physical - reserved - this.safetyBuffer);
+      storeBreakdown.push({
+        storeId: inv.storeId,
+        storeName: inv.storeName,
+        physical,
+        reserved,
+        sellable,
+      });
+    }
 
-            totalPhysical += physical;
-            totalReserved += reserved;
+    const totalSellable = Math.max(
+      0,
+      totalPhysical - totalReserved - this.safetyBuffer * storeBreakdown.length,
+    );
 
-            storeBreakdown.push({
-                storeId: inv.si_storeId,
-                storeName: inv.store_name,
-                physical,
-                reserved,
-                sellable,
-            });
-        }
+    return {
+      sku,
+      physicalStock: totalPhysical,
+      reservedStock: totalReserved,
+      safetyBuffer: this.safetyBuffer * storeBreakdown.length,
+      sellableStock: totalSellable,
+      storeBreakdown,
+    };
+  }
 
-        const totalSellable = Math.max(0, totalPhysical - totalReserved - (this.safetyBuffer * storeBreakdown.length));
+  /**
+   * Create a reservation for a SKU.
+   * Uses optimistic locking to prevent overselling.
+   */
+  async createReservation(
+    sku: string,
+    quantity: number,
+    sessionId: string,
+  ): Promise<CreateReservationResult> {
+    return this.dataSource.transaction(async (manager) => {
+      // Find best store with sufficient stock (highest stock first)
+      const stores = await manager
+        .createQueryBuilder(StoreInventory, 'si')
+        .innerJoinAndSelect('si.store', 'store')
+        .where('si.sku = :sku', { sku })
+        .andWhere('store.isFulfillmentEnabled = :enabled', { enabled: true })
+        .andWhere('store.isActive = :active', { active: true })
+        .orderBy('si.quantity', 'DESC')
+        .setLock('pessimistic_write')
+        .getMany();
 
-        return {
+      for (const inv of stores) {
+        // Get active reservations for this store
+        const reserved = await manager
+          .createQueryBuilder(InventoryReservation, 'r')
+          .select('COALESCE(SUM(r.quantity), 0)', 'total')
+          .where('r.sku = :sku', { sku })
+          .andWhere('r.storeId = :storeId', { storeId: inv.storeId })
+          .andWhere('r.status = :status', { status: ReservationStatus.ACTIVE })
+          .andWhere('r.expiresAt > :now', { now: new Date() })
+          .getRawOne<{ total: string }>();
+
+        const reservedQty = parseInt(reserved?.total ?? '0') || 0;
+        const sellable = inv.quantity - reservedQty - this.safetyBuffer;
+
+        if (sellable >= quantity) {
+          // Create the reservation
+          const expiresAt = new Date(
+            Date.now() + this.reservationMinutes * 60 * 1000,
+          );
+
+          const reservation = manager.create(InventoryReservation, {
+            storeId: inv.storeId,
             sku,
-            physicalStock: totalPhysical,
-            reservedStock: totalReserved,
-            safetyBuffer: this.safetyBuffer * storeBreakdown.length,
-            sellableStock: totalSellable,
-            storeBreakdown,
-        };
-    }
+            quantity,
+            expiresAt,
+            sessionId,
+            status: ReservationStatus.ACTIVE,
+          });
 
-    /**
-     * Create a reservation for a SKU.
-     * Uses optimistic locking to prevent overselling.
-     */
-    async createReservation(
-        sku: string,
-        quantity: number,
-        sessionId: string,
-    ): Promise<CreateReservationResult> {
-        return this.dataSource.transaction(async (manager) => {
-            // Find best store with sufficient stock (highest stock first)
-            const stores = await manager
-                .createQueryBuilder(StoreInventory, 'si')
-                .innerJoinAndSelect('si.store', 'store')
-                .where('si.sku = :sku', { sku })
-                .andWhere('store.isFulfillmentEnabled = :enabled', { enabled: true })
-                .andWhere('store.isActive = :active', { active: true })
-                .orderBy('si.quantity', 'DESC')
-                .setLock('pessimistic_write')
-                .getMany();
+          const saved = await manager.save(InventoryReservation, reservation);
 
-            for (const inv of stores) {
-                // Get active reservations for this store
-                const reserved = await manager
-                    .createQueryBuilder(InventoryReservation, 'r')
-                    .select('COALESCE(SUM(r.quantity), 0)', 'total')
-                    .where('r.sku = :sku', { sku })
-                    .andWhere('r.storeId = :storeId', { storeId: inv.storeId })
-                    .andWhere('r.status = :status', { status: ReservationStatus.ACTIVE })
-                    .andWhere('r.expiresAt > :now', { now: new Date() })
-                    .getRawOne();
+          this.logger.log(
+            `Created reservation ${saved.id} for ${quantity}x ${sku} at store ${inv.store.name}`,
+          );
 
-                const reservedQty = parseInt(reserved.total) || 0;
-                const sellable = inv.quantity - reservedQty - this.safetyBuffer;
-
-                if (sellable >= quantity) {
-                    // Create the reservation
-                    const expiresAt = new Date(Date.now() + this.reservationMinutes * 60 * 1000);
-
-                    const reservation = manager.create(InventoryReservation, {
-                        storeId: inv.storeId,
-                        sku,
-                        quantity,
-                        expiresAt,
-                        sessionId,
-                        status: ReservationStatus.ACTIVE,
-                    });
-
-                    const saved = await manager.save(InventoryReservation, reservation);
-
-                    this.logger.log(
-                        `Created reservation ${saved.id} for ${quantity}x ${sku} at store ${inv.store.name}`,
-                    );
-
-                    return { reservation: saved, store: inv.store };
-                }
-            }
-
-            throw new Error(`Insufficient stock for SKU ${sku}. Requested: ${quantity}`);
-        });
-    }
-
-    /**
-     * Expire old reservations. Called by cron job every minute.
-     */
-    async expireReservations(): Promise<number> {
-        const result = await this.reservationRepository.update(
-            {
-                status: ReservationStatus.ACTIVE,
-                expiresAt: LessThan(new Date()),
-            },
-            {
-                status: ReservationStatus.EXPIRED,
-            },
-        );
-
-        if ((result.affected ?? 0) > 0) {
-            this.logger.log(`Expired ${result.affected} reservations`);
+          return { reservation: saved, store: inv.store };
         }
+      }
 
-        return result.affected ?? 0;
+      throw new Error(
+        `Insufficient stock for SKU ${sku}. Requested: ${quantity}`,
+      );
+    });
+  }
+
+  /**
+   * Expire old reservations. Called by cron job every minute.
+   */
+  async expireReservations(): Promise<number> {
+    const result = await this.reservationRepository.update(
+      {
+        status: ReservationStatus.ACTIVE,
+        expiresAt: LessThan(new Date()),
+      },
+      {
+        status: ReservationStatus.EXPIRED,
+      },
+    );
+
+    if ((result.affected ?? 0) > 0) {
+      this.logger.log(`Expired ${result.affected} reservations`);
     }
 
-    /**
-     * Convert reservations to permanent after payment success.
-     */
-    async convertReservations(orderId: string): Promise<void> {
-        await this.reservationRepository.update(
-            { orderId },
-            { status: ReservationStatus.CONVERTED },
-        );
+    return result.affected ?? 0;
+  }
 
-        this.logger.log(`Converted reservations for order ${orderId}`);
+  /**
+   * Convert reservations to permanent after payment success.
+   */
+  async convertReservations(orderId: string): Promise<void> {
+    await this.reservationRepository.update(
+      { orderId },
+      { status: ReservationStatus.CONVERTED },
+    );
+
+    this.logger.log(`Converted reservations for order ${orderId}`);
+  }
+
+  /**
+   * Cancel reservations (on payment failure or cart removal).
+   */
+  async cancelReservations(
+    orderId?: string,
+    sessionId?: string,
+  ): Promise<void> {
+    const where: FindOptionsWhere<InventoryReservation> = {
+      status: ReservationStatus.ACTIVE,
+    };
+
+    if (orderId) {
+      where.orderId = orderId;
+    } else if (sessionId) {
+      where.sessionId = sessionId;
+    } else {
+      throw new Error('Must provide either orderId or sessionId');
     }
 
-    /**
-     * Cancel reservations (on payment failure or cart removal).
-     */
-    async cancelReservations(orderId?: string, sessionId?: string): Promise<void> {
-        const where: any = { status: ReservationStatus.ACTIVE };
+    await this.reservationRepository.update(where, {
+      status: ReservationStatus.CANCELLED,
+    });
 
-        if (orderId) {
-            where.orderId = orderId;
-        } else if (sessionId) {
-            where.sessionId = sessionId;
-        } else {
-            throw new Error('Must provide either orderId or sessionId');
-        }
+    this.logger.log(
+      `Cancelled reservations for ${orderId ? `order ${orderId}` : `session ${sessionId}`}`,
+    );
+  }
 
-        await this.reservationRepository.update(where, {
-            status: ReservationStatus.CANCELLED,
-        });
+  /**
+   * Link reservations to an order (called during checkout).
+   */
+  async linkReservationsToOrder(
+    sessionId: string,
+    orderId: string,
+  ): Promise<void> {
+    await this.reservationRepository.update(
+      {
+        sessionId,
+        status: ReservationStatus.ACTIVE,
+      },
+      { orderId },
+    );
 
-        this.logger.log(
-            `Cancelled reservations for ${orderId ? `order ${orderId}` : `session ${sessionId}`}`,
-        );
-    }
+    this.logger.log(
+      `Linked reservations from session ${sessionId} to order ${orderId}`,
+    );
+  }
 
-    /**
-     * Link reservations to an order (called during checkout).
-     */
-    async linkReservationsToOrder(sessionId: string, orderId: string): Promise<void> {
-        await this.reservationRepository.update(
-            {
-                sessionId,
-                status: ReservationStatus.ACTIVE,
-            },
-            { orderId },
-        );
+  /**
+   * Get active reservations for a session.
+   */
+  async getSessionReservations(
+    sessionId: string,
+  ): Promise<InventoryReservation[]> {
+    return this.reservationRepository.find({
+      where: {
+        sessionId,
+        status: ReservationStatus.ACTIVE,
+      },
+      relations: ['store'],
+    });
+  }
 
-        this.logger.log(`Linked reservations from session ${sessionId} to order ${orderId}`);
-    }
+  /**
+   * Release a single reservation (when removing from cart).
+   */
+  async releaseReservation(reservationId: string): Promise<void> {
+    await this.reservationRepository.update(
+      { id: reservationId, status: ReservationStatus.ACTIVE },
+      { status: ReservationStatus.CANCELLED },
+    );
 
-    /**
-     * Get active reservations for a session.
-     */
-    async getSessionReservations(sessionId: string): Promise<InventoryReservation[]> {
-        return this.reservationRepository.find({
-            where: {
-                sessionId,
-                status: ReservationStatus.ACTIVE,
-            },
-            relations: ['store'],
-        });
-    }
-
-    /**
-     * Release a single reservation (when removing from cart).
-     */
-    async releaseReservation(reservationId: string): Promise<void> {
-        await this.reservationRepository.update(
-            { id: reservationId, status: ReservationStatus.ACTIVE },
-            { status: ReservationStatus.CANCELLED },
-        );
-
-        this.logger.log(`Released reservation ${reservationId}`);
-    }
+    this.logger.log(`Released reservation ${reservationId}`);
+  }
 }

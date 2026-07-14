@@ -70,7 +70,7 @@ Defer until after launch: saved cards, customer OTP accounts, wishlists, reviews
 - [x] Require valid webhook signatures; keep payment handling idempotent
 - [x] Add production database migrations; do not use schema synchronization in production
 - [x] Import and verify the mock catalog, images, prices, variants, and stock in Supabase
-- [ ] Add smoke tests for catalog, reservation, checkout, order lookup, and protected admin access
+- [x] Run a Supabase-backed smoke rehearsal for catalog, reservation, checkout, order lookup privacy, and protected admin access
 
 Exit gate: A customer can browse the real catalog, add a specific size/color to cart, enter delivery details, and reach a test payment page on mobile.
 
