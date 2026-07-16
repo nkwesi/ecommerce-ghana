@@ -20,10 +20,22 @@ export interface PaystackWebhookEvent {
     };
 }
 
+interface PaystackTransaction {
+    id?: number | string;
+    reference: string;
+    amount: number;
+    currency: string;
+    status: string;
+    gateway_response?: string;
+    metadata?: Record<string, unknown>;
+}
+
 @Injectable()
 export class PaymentsService {
     private readonly logger = new Logger(PaymentsService.name);
     private readonly webhookSecret: string;
+    private readonly paystackSecretKey: string;
+    private readonly paymentMode: string;
 
     constructor(
         @InjectRepository(Payment) private paymentRepository: Repository<Payment>,
@@ -34,6 +46,8 @@ export class PaymentsService {
         private configService: ConfigService,
     ) {
         this.webhookSecret = this.configService.get<string>('app.paystackWebhookSecret', '');
+        this.paystackSecretKey = this.configService.get<string>('app.paystackSecretKey', '');
+        this.paymentMode = this.configService.get<string>('app.paymentMode', 'demo');
     }
 
     verifyWebhookSignature(payload: Buffer | string, signature: string): boolean {
@@ -47,12 +61,12 @@ export class PaymentsService {
     async processWebhook(event: PaystackWebhookEvent): Promise<void> {
         const eventId = `paystack:${event.event}:${event.data.id ?? event.data.reference}`;
         const existing = await this.webhookEventRepository.findOne({ where: { eventId } });
-        if (existing) {
+        if (existing?.isSuccessful) {
             this.logger.log(`Webhook ${eventId} already processed`);
             return;
         }
 
-        const webhookEvent = this.webhookEventRepository.create({
+        const webhookEvent = existing ?? this.webhookEventRepository.create({
             eventId,
             eventType: event.event,
             provider: 'paystack',
@@ -78,22 +92,43 @@ export class PaymentsService {
         await this.webhookEventRepository.save(webhookEvent);
     }
 
-    private async handlePaymentSuccess(event: PaystackWebhookEvent): Promise<void> {
+    private async handlePaymentSuccess(
+        event: PaystackWebhookEvent,
+        verifiedTransaction?: PaystackTransaction,
+    ): Promise<void> {
+        const transaction = verifiedTransaction ?? (this.paymentMode === 'paystack'
+            ? await this.verifyPaystackTransaction(event.data.reference)
+            : {
+                ...event.data,
+                amount: event.data.amount ?? 0,
+                currency: event.data.currency ?? '',
+                status: event.data.status ?? 'success',
+            });
+
+        if (transaction.status !== 'success') {
+            throw new Error(`Payment is not successful: ${event.data.reference} (${transaction.status})`);
+        }
+
         await this.dataSource.transaction(async (manager) => {
             const payment = await manager.findOne(Payment, { where: { paymentIntentId: event.data.reference } });
             if (!payment) throw new Error(`Payment not found: ${event.data.reference}`);
             if (payment.status === PaymentStatus.SUCCEEDED) return;
 
-            const receivedAmount = Number(event.data.amount ?? 0) / 100;
-            if (Math.abs(Number(payment.amount) - receivedAmount) > 0.001) {
+            if (!Number.isSafeInteger(transaction.amount) || payment.amountPesewas !== transaction.amount) {
                 throw new Error(`Payment amount mismatch for ${event.data.reference}`);
             }
-            if (event.data.currency !== payment.currency) {
+            if (transaction.currency !== payment.currency) {
                 throw new Error(`Payment currency mismatch for ${event.data.reference}`);
             }
 
             const order = await manager.findOne(Order, { where: { id: payment.orderId } });
             if (!order) throw new Error(`Order not found: ${payment.orderId}`);
+            if (transaction.reference !== payment.paymentIntentId) {
+                throw new Error(`Payment reference mismatch for ${event.data.reference}`);
+            }
+            if (transaction.metadata?.orderId && transaction.metadata.orderId !== order.id) {
+                throw new Error(`Payment order mismatch for ${event.data.reference}`);
+            }
 
             payment.status = PaymentStatus.SUCCEEDED;
             order.status = OrderStatus.PAID;
@@ -132,6 +167,51 @@ export class PaymentsService {
         return this.paymentRepository.findOne({ where: { orderId } });
     }
 
+    async reconcileOrderPayment(orderId: string): Promise<PaymentStatus> {
+        const payment = await this.findByOrderId(orderId);
+        if (!payment) throw new Error(`Payment not found for order: ${orderId}`);
+        if (payment.status !== PaymentStatus.PENDING || payment.paymentProvider !== 'paystack') {
+            return payment.status;
+        }
+
+        const transaction = await this.verifyPaystackTransaction(payment.paymentIntentId);
+        if (transaction.status === 'success') {
+            await this.handlePaymentSuccess(
+                { event: 'charge.success', data: transaction },
+                transaction,
+            );
+            return PaymentStatus.SUCCEEDED;
+        }
+        if (['failed', 'abandoned', 'reversed'].includes(transaction.status)) {
+            await this.handlePaymentFailure({
+                event: 'charge.failed',
+                data: transaction,
+            });
+            return PaymentStatus.FAILED;
+        }
+        return PaymentStatus.PENDING;
+    }
+
+    private async verifyPaystackTransaction(reference: string): Promise<PaystackTransaction> {
+        if (!this.paystackSecretKey) throw new Error('Paystack secret key is not configured');
+        const response = await fetch(
+            `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+            { headers: { Authorization: `Bearer ${this.paystackSecretKey}` } },
+        );
+        const result = await response.json() as {
+            status?: boolean;
+            message?: string;
+            data?: PaystackTransaction;
+        };
+        if (!response.ok || !result.status || !result.data) {
+            throw new Error(result.message || `Unable to verify payment ${reference}`);
+        }
+        if (result.data.reference !== reference) {
+            throw new Error(`Payment reference mismatch for ${reference}`);
+        }
+        return result.data;
+    }
+
     async simulatePaymentSuccess(reference: string): Promise<void> {
         const payment = await this.paymentRepository.findOne({ where: { paymentIntentId: reference } });
         if (!payment) throw new Error(`Payment not found: ${reference}`);
@@ -140,7 +220,7 @@ export class PaymentsService {
             data: {
                 id: `demo-${Date.now()}`,
                 reference,
-                amount: Math.round(Number(payment.amount) * 100),
+                amount: payment.amountPesewas,
                 currency: payment.currency,
                 status: 'success',
             },

@@ -46,3 +46,10 @@ export function checkout(payload: CheckoutPayload) {
 export function getOrder(orderNumber: string, email: string) {
   return request<Record<string, unknown>>(`/orders/${encodeURIComponent(orderNumber)}?email=${encodeURIComponent(email)}`);
 }
+
+export function verifyOrderPayment(orderNumber: string, email: string) {
+  return request<{ orderStatus: string; paymentStatus: string }>(`/orders/${encodeURIComponent(orderNumber)}/payment/verify`, {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}

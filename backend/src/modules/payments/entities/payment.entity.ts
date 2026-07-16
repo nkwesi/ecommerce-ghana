@@ -40,8 +40,15 @@ export class Payment {
     @Column({ name: 'checkout_url', length: 500, nullable: true })
     checkoutUrl: string;
 
-    @Column({ type: 'decimal', precision: 10, scale: 2 })
-    amount: number;
+    @Column({
+        name: 'amount_pesewas',
+        type: 'bigint',
+        transformer: {
+            to: (value: number) => value,
+            from: (value: string) => Number(value),
+        },
+    })
+    amountPesewas: number;
 
     @Column({ length: 3, default: 'GHS' })
     currency: string;

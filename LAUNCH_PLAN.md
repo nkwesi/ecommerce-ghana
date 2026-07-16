@@ -23,6 +23,9 @@ Completed in the first implementation pass:
 - [x] Connected Paystack test mode and verified server-side GHS transaction initialization returns a genuine hosted checkout URL.
 - [x] Deployed the API to Railway and the storefront to Vercel, connected their production origins, and verified the key HTTPS routes and CORS preflight.
 - [x] Selected the Drobe 233 working brand and configured three Accra delivery zones using published third-party courier rates: GH₵35, GH₵50, and GH₵60.
+- [x] Moved payment records to integer pesewas, added server-side Paystack transaction verification, and rejected amount, currency, reference, or order mismatches before marking an order paid.
+- [x] Added callback reconciliation and bounded order-status polling so delayed Mobile Money payments remain pending until the backend confirms them.
+- [x] Added crawl rules, a product/policy sitemap, Open Graph/Twitter metadata, and a favicon.
 
 Remaining launch blockers:
 
@@ -83,10 +86,10 @@ Exit gate: A customer can browse the real catalog, add a specific size/color to 
 ### Payments and orders
 
 - [x] Replace the Polar mock with Paystack server-side transaction initialization
-- [ ] Store money as integer pesewas during payment calculations and verify amount, currency, reference, and order before marking paid
-- [ ] Implement and test Paystack webhook signature validation and transaction verification fallback
+- [x] Store money as integer pesewas during payment calculations and verify amount, currency, reference, and order before marking paid
+- [x] Implement and test Paystack webhook signature validation and transaction verification fallback
 - [ ] Handle success, failure, abandonment, delayed Mobile Money confirmation, duplicate events, and expired reservations
-- [ ] Show a clear pending state instead of treating a redirect as proof of payment
+- [x] Show a clear pending state instead of treating a redirect as proof of payment
 - [ ] Send a customer receipt/order confirmation and an internal new-order alert
 
 ### Production
@@ -95,9 +98,9 @@ Exit gate: A customer can browse the real catalog, add a specific size/color to 
 - [ ] Configure the custom domain
 - [ ] Set production environment variables and rotate any credentials used during development
 - [ ] Configure database backups, uptime monitoring, structured logs, and error alerts
-- [ ] Add robots metadata, sitemap, social preview, favicon, contact details, and basic analytics
+- [ ] Add final social preview artwork, real contact details, and basic analytics (robots metadata, sitemap, social metadata, and favicon are complete)
 - [ ] Confirm admin login and a simple fulfillment flow: paid -> processing -> dispatched/ready -> delivered
-- [ ] Document manual fallback for payment or notification outages
+- [x] Document manual fallback for payment or notification outages in `OPERATIONS_RUNBOOK.md`
 
 Exit gate: A low-value live Mobile Money/card payment creates exactly one paid order, decrements the correct stock once, sends both notifications, and appears in the staff order view.
 
@@ -130,12 +133,12 @@ Do not open public sales unless all are true:
 
 - [x] Storefront and API are accessible over HTTPS on production domains
 - [ ] Live Mobile Money or card payment has been completed and reconciled
-- [ ] An order cannot be marked paid by the browser alone or by an unsigned webhook
+- [x] An order cannot be marked paid by the browser alone or by an unsigned webhook
 - [ ] Correct price, delivery, tax treatment, and final total are shown before payment
 - [ ] Correct variant stock is decremented exactly once and out-of-stock items cannot be bought
 - [ ] Staff receive new-order alerts and can access customer delivery details securely
 - [ ] Customer receives an order number and support contact
-- [ ] Returns/refunds, privacy, delivery, and terms pages are visible
+- [x] Returns/refunds, privacy, delivery, and terms pages are visible (business approval and real contact details remain required)
 - [ ] Database backups and error/uptime alerts are active
 - [ ] At least one complete order-to-fulfillment rehearsal has passed
 

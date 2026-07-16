@@ -18,12 +18,14 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
 import { UseGuards } from '@nestjs/common';
 import { CheckoutDto } from './dto/checkout.dto';
+import { PaymentsService } from '../payments/payments.service';
 
 @Controller()
 export class OrdersController {
     constructor(
         private readonly ordersService: OrdersService,
         private readonly checkoutService: CheckoutService,
+        private readonly paymentsService: PaymentsService,
     ) { }
 
     /**
@@ -64,6 +66,26 @@ export class OrdersController {
                 HttpStatus.BAD_REQUEST,
             );
         }
+    }
+
+    /**
+     * Server-side fallback for redirects or delayed Mobile Money confirmation.
+     * The client can request reconciliation, but never supplies or controls the payment reference.
+     */
+    @Post('orders/:orderNumber/payment/verify')
+    async verifyPayment(
+        @Param('orderNumber') orderNumber: string,
+        @Body() body: { email?: string },
+    ) {
+        const order = await this.ordersService.findByOrderNumber(orderNumber);
+        if (!body.email) {
+            throw new HttpException('Email is required', HttpStatus.BAD_REQUEST);
+        }
+        if (order.customerEmail.toLowerCase() !== body.email.toLowerCase()) {
+            throw new HttpException('Email does not match', HttpStatus.FORBIDDEN);
+        }
+        const paymentStatus = await this.paymentsService.reconcileOrderPayment(order.id);
+        return { orderStatus: paymentStatus === 'succeeded' ? OrderStatus.PAID : order.status, paymentStatus };
     }
 
     /**

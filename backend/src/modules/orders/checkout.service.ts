@@ -132,6 +132,7 @@ export class CheckoutService {
             const taxAmount = Number((subtotal * this.vatRate).toFixed(2));
             const shippingCost = getDeliveryFee(shipping.deliveryZone);
             const total = Number((subtotal + taxAmount + shippingCost).toFixed(2));
+            const amountPesewas = Math.round(total * 100);
 
             // Step 4: Generate order number
             const orderNumber = await this.generateOrderNumber();
@@ -195,7 +196,7 @@ export class CheckoutService {
                 paymentIntentId,
                 savedOrder,
                 customer.email,
-                total,
+                amountPesewas,
             );
 
             const payment = manager.create(Payment, {
@@ -203,7 +204,7 @@ export class CheckoutService {
                 paymentProvider: this.paymentMode === 'paystack' ? 'paystack' : 'demo',
                 paymentIntentId,
                 checkoutUrl,
-                amount: total,
+                amountPesewas,
                 currency: this.currency,
                 status: PaymentStatus.PENDING,
             });
@@ -247,7 +248,7 @@ export class CheckoutService {
         reference: string,
         order: Order,
         email: string,
-        total: number,
+        amountPesewas: number,
     ): Promise<string> {
         const orderUrl = `${this.frontendUrl}/order/${order.orderNumber}`;
         if (this.paymentMode !== 'paystack') {
@@ -262,7 +263,7 @@ export class CheckoutService {
             },
             body: JSON.stringify({
                 email,
-                amount: Math.round(total * 100),
+                amount: amountPesewas,
                 currency: this.currency,
                 reference,
                 callback_url: `${orderUrl}?email=${encodeURIComponent(email)}`,

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { formatGHS } from '@/lib/catalog';
-import { getOrder } from '@/lib/api';
+import { getOrder, verifyOrderPayment } from '@/lib/api';
 
 type DisplayOrder = { orderNumber: string; email?: string; name?: string; customerName?: string; total: number; status: string; items: Array<{ product?: { name: string }; productName?: string; variant?: { color: string; size: string }; color?: string; size?: string; quantity: number }> };
 
@@ -15,7 +15,24 @@ export default function OrderPage() {
     if (raw) { setOrder(JSON.parse(raw)); return; }
     const email = search.get('email') || localStorage.getItem('ghanastyle-last-email');
     if (!email) { setOrder(null); return; }
-    getOrder(orderNumber, email).then((result) => setOrder(result as unknown as DisplayOrder)).catch(() => setOrder(null));
+    let stopped = false;
+    let attempts = 0;
+    let timer: number | undefined;
+    const refresh = async () => {
+      if (stopped) return;
+      try {
+        if (attempts === 0) await verifyOrderPayment(orderNumber, email).catch(() => undefined);
+        const result = await getOrder(orderNumber, email) as unknown as DisplayOrder;
+        if (stopped) return;
+        setOrder(result);
+        attempts += 1;
+        if (result.status === 'pending' && attempts < 36) timer = window.setTimeout(refresh, 5000);
+      } catch {
+        if (!stopped) setOrder(null);
+      }
+    };
+    void refresh();
+    return () => { stopped = true; if (timer) window.clearTimeout(timer); };
   }, [orderNumber, search]);
   if (order === undefined) return <div className="empty-state"><p>Loading your order…</p></div>;
   if (!order) return <div className="empty-state"><h1>Order not found.</h1><p>Check the order number or contact our support team.</p><Link className="button primary" href="/shop">Return to shop</Link></div>;
