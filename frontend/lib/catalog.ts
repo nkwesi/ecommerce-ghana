@@ -12,7 +12,7 @@ export type Product = {
   id: string;
   slug: string;
   name: string;
-  category: 'Women' | 'Men' | 'Essentials';
+  category: string;
   description: string;
   price: number;
   compareAtPrice?: number;
@@ -115,6 +115,89 @@ export const products: Product[] = [
 
 export function getProduct(slug: string) {
   return products.find((product) => product.slug === slug);
+}
+
+type ApiProductListItem = {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  basePrice: number | string;
+  images?: string[];
+  isFeatured?: boolean;
+  category?: { name: string } | null;
+  priceRange?: { min: number; max: number };
+  compareAtPrice?: number | string | null;
+};
+
+type ApiProductDetail = ApiProductListItem & {
+  variants: Array<{
+    id: string;
+    sku: string;
+    sizeCode: string;
+    color: string;
+    colorHex?: string | null;
+    price: number | string;
+    compareAtPrice?: number | string | null;
+    images?: string[];
+    stock: number;
+  }>;
+};
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+
+function listItemToProduct(item: ApiProductListItem): Product {
+  return {
+    id: item.id,
+    slug: item.slug,
+    name: item.name,
+    description: item.description || '',
+    category: item.category?.name || 'Uncategorised',
+    price: Number(item.priceRange?.min ?? item.basePrice),
+    compareAtPrice: item.compareAtPrice ? Number(item.compareAtPrice) : undefined,
+    image: item.images?.[0] || '/products/tee.png',
+    featured: item.isFeatured,
+    variants: [],
+  };
+}
+
+export async function getCatalog(options?: { featured?: boolean }): Promise<Product[]> {
+  try {
+    const query = new URLSearchParams({ limit: '100' });
+    if (options?.featured) query.set('featured', 'true');
+    const response = await fetch(`${API_URL}/products?${query}`, { next: { revalidate: 60 } });
+    if (!response.ok) throw new Error(`Catalog API returned ${response.status}`);
+    const body = await response.json() as { products: ApiProductListItem[] };
+    return body.products.map(listItemToProduct);
+  } catch {
+    return options?.featured ? products.filter((product) => product.featured) : products;
+  }
+}
+
+export async function getCatalogProduct(slug: string): Promise<Product | undefined> {
+  try {
+    const response = await fetch(`${API_URL}/products/${encodeURIComponent(slug)}`, { next: { revalidate: 60 } });
+    if (response.status === 404) return getProduct(slug);
+    if (!response.ok) throw new Error(`Product API returned ${response.status}`);
+    const item = await response.json() as ApiProductDetail;
+    const product = listItemToProduct(item);
+    product.variants = item.variants.map((variant) => ({
+      id: variant.id,
+      sku: variant.sku,
+      size: variant.sizeCode,
+      color: variant.color,
+      colorHex: variant.colorHex || '#777777',
+      price: Number(variant.price),
+      stock: Number(variant.stock),
+    }));
+    product.compareAtPrice = item.variants
+      .map((variant) => Number(variant.compareAtPrice))
+      .find((price) => Number.isFinite(price) && price > 0);
+    product.image = item.images?.[0] || item.variants.find((variant) => variant.images?.[0])?.images?.[0] || '/products/tee.png';
+    return product;
+  } catch {
+    return getProduct(slug);
+  }
 }
 
 export function formatGHS(value: number) {

@@ -2,10 +2,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ProductCard } from '@/components/product-card';
 import { ArrowIcon } from '@/components/icons';
-import { products } from '@/lib/catalog';
+import { getCatalog } from '@/lib/catalog';
 
-export default function Home() {
-  const featured = products.filter((p) => p.featured);
+export default async function Home() {
+  const featured = await getCatalog({ featured: true });
   return <>
     <section className="hero">
       <div className="hero-copy"><p className="eyebrow">The July edit · 2026</p><h1>Ease,<br/><em>beautifully</em> made.</h1><p>Quietly confident pieces designed for warm days, late nights, and everything between.</p><Link className="button light" href="/shop">Shop the collection <ArrowIcon /></Link></div>
