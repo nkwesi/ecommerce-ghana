@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { formatGHS } from '@/lib/catalog';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+const API_URL = '/backend-api';
 
 type Order = {
   id: string;
